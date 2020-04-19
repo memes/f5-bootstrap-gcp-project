@@ -1,0 +1,13 @@
+# Ignore my direnv setup
+.envrc
+
+# Ignore Terraform plugin/module cache and local state files
+.terraform
+*.tfstate
+*.tfstate.backup
+
+# Don't include any local automatic variable assignment files
+terraform.tfvars
+terraform.tfvars.json
+*.auto.tfvars
+*.auto.tfvars.json
