@@ -70,3 +70,16 @@ A list of IAM roles to assign to the Terraform service account. Defaults to a se
 needed to manage Compute resources, GCS buckets, and IAM assignments.
 EOD
 }
+
+variable "oslogin_groups" {
+  type        = list(string)
+  default     = []
+  description = <<EOD
+A list of groups that will be allowed to use OS Login to VMs.
+E.g.
+oslogin_groups = [
+  "devsecops@example.com",
+  "admins@example.com",
+]
+EOD
+}

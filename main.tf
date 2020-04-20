@@ -72,3 +72,13 @@ resource "google_project_iam_member" "tf_sa_roles" {
 
   depends_on = [google_project_service.apis]
 }
+
+# Allow these groups to use OS Login
+resource "google_project_iam_member" "oslogin" {
+  for_each = toset(var.oslogin_groups)
+  project  = var.project_id
+  role     = "roles/compute.osLogin"
+  member   = format("group:%s", each.value)
+
+  depends_on = [google_project_service.apis]
+}

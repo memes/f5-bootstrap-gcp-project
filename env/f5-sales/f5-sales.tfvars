@@ -5,4 +5,8 @@ tf_sa_impersonate_groups = [
 apis = [
   "compute.googleapis.com",
   "iap.googleapis.com",
+  "oslogin.googleapis.com",
+]
+oslogin_groups = [
+  "app-gcs_4138_sales_cloud_sales_users@f5.com",
 ]
