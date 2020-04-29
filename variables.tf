@@ -48,8 +48,14 @@ EOD
 }
 
 variable "apis" {
-  type        = list(string)
-  default     = []
+  type = list(string)
+  default = [
+    "compute.googleapis.com",
+    "iap.googleapis.com",
+    "oslogin.googleapis.com",
+    "iam.googleapis.com",
+    "iamcredentials.googleapis.com",
+  ]
   description = <<EOD
 An optional list of GCP APIs to enable in the project.
 EOD

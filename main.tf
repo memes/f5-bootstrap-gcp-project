@@ -25,7 +25,13 @@ resource "google_service_account" "tf" {
 
 # Bind the impersonation privileges to the Terraform service account if group
 # list is not empty.
-resource "google_service_account_iam_binding" "tf_impersonate" {
+resource "google_service_account_iam_binding" "tf_impersonate_user" {
+  count              = length(var.tf_sa_impersonate_groups) > 0 ? 1 : 0
+  service_account_id = google_service_account.tf.name
+  role               = "roles/iam.serviceAccountUser"
+  members            = formatlist("group:%s", var.tf_sa_impersonate_groups)
+}
+resource "google_service_account_iam_binding" "tf_impersonate_token" {
   count              = length(var.tf_sa_impersonate_groups) > 0 ? 1 : 0
   service_account_id = google_service_account.tf.name
   role               = "roles/iam.serviceAccountTokenCreator"
