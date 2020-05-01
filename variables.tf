@@ -55,6 +55,7 @@ variable "apis" {
     "oslogin.googleapis.com",
     "iam.googleapis.com",
     "iamcredentials.googleapis.com",
+    "cloudresourcemanager.googleapis.com",
   ]
   description = <<EOD
 An optional list of GCP APIs to enable in the project.
