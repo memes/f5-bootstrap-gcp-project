@@ -104,7 +104,8 @@ If you need to bootstrap a new GCP project to support Terraform automation:
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| apis | An optional list of GCP APIs to enable in the project. | `list(string)` | `[]` | no |
+| apis | An optional list of GCP APIs to enable in the project. | `list(string)` | <pre>[<br>  "compute.googleapis.com",<br>  "iap.googleapis.com",<br>  "oslogin.googleapis.com",<br>  "iam.googleapis.com",<br>  "iamcredentials.googleapis.com",<br>  "cloudresourcemanager.googleapis.com"<br>]</pre> | no |
+| oslogin\_groups | A list of groups that will be allowed to use OS Login to VMs.<br>E.g.<br>oslogin\_groups = [<br>  "devsecops@example.com",<br>  "admins@example.com",<br>] | `list(string)` | `[]` | no |
 | project\_id | The existing project id that will have a Terraform service account added. | `string` | n/a | yes |
 | tf\_bucket\_location | The location where the bucket will be created; this could be a GCE region, or a<br>dual-region or multi-region specifier. Default is to create a multi-region bucket<br>in 'US'. | `string` | `"US"` | no |
 | tf\_bucket\_name | The name of a GCS bucket to create for Terraform state storage. This name must be<br>unique in GCP. If blank, (the default), the name will be 'tf-PROJECT\_ID', where<br>PROJECT\_ID is the unique project identifier. | `string` | `""` | no |

@@ -25,7 +25,13 @@ resource "google_service_account" "tf" {
 
 # Bind the impersonation privileges to the Terraform service account if group
 # list is not empty.
-resource "google_service_account_iam_binding" "tf_impersonate" {
+resource "google_service_account_iam_binding" "tf_impersonate_user" {
+  count              = length(var.tf_sa_impersonate_groups) > 0 ? 1 : 0
+  service_account_id = google_service_account.tf.name
+  role               = "roles/iam.serviceAccountUser"
+  members            = formatlist("group:%s", var.tf_sa_impersonate_groups)
+}
+resource "google_service_account_iam_binding" "tf_impersonate_token" {
   count              = length(var.tf_sa_impersonate_groups) > 0 ? 1 : 0
   service_account_id = google_service_account.tf.name
   role               = "roles/iam.serviceAccountTokenCreator"
@@ -69,6 +75,16 @@ resource "google_project_iam_member" "tf_sa_roles" {
   project = var.project_id
   role    = element(var.tf_sa_roles, count.index)
   member  = format("serviceAccount:%s", google_service_account.tf.email)
+
+  depends_on = [google_project_service.apis]
+}
+
+# Allow these groups to use OS Login
+resource "google_project_iam_member" "oslogin" {
+  for_each = toset(var.oslogin_groups)
+  project  = var.project_id
+  role     = "roles/compute.osLogin"
+  member   = format("group:%s", each.value)
 
   depends_on = [google_project_service.apis]
 }
