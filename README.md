@@ -10,6 +10,82 @@ During execution the script will create these resources:
    - with an extendible set of roles at project
    - with optional impersonation enabled for AD group(s)
 
+## Usage
+
+This repo uses file based environment configurations in preference to Terraform
+workspaces. Per-environment configurations are stored in `env/ENV/name.{config,tfvars}`, where ENV and name represents the GCP project enviornment to manage.
+
+### To make a change to an **existing** project
+
+To make changes to an existing project to add additional impersonation groups, or to enable other GCP APIs
+
+1. Branch the repo
+1. Edit the relevant environment `tfvars` file
+1. Execute standard Terraform process
+
+   ```shell
+   $ terraform init -backend-config env/ENV/name.config
+   $ terraform plan -var-file env/ENV/name.tfvars
+   $ terraform apply -var-file env/ENV/name.tfvars
+   ```
+1. Push the changes to GitHub and open a PR to merge to `master`
+
+### To bootstrap a **new** project
+
+If you need to bootstrap a new GCP project to support Terraform automation:
+
+1. Branch the repo
+1. Create a new `env` folder for the project, with a `config` and `tfvar` file.
+   - Edit the new `tfvar` file and set `project_id` to the unique GCP project id
+   - *Optional:* Add AD groups that will be granted the ability to impersonate Terraform service account
+   - *Optional:* Add any Google Cloud APIs that need to be enabled
+   - *Optional:* Add any roles that should be granted to the Terraform service account
+1. Comment out line 12 [`main.tf`](main.tf#L12) to disable the GCS backend; this will be reverted after the state bucket is bootstrapped.
+1. Execute Terraform to create the Terraform state bucket and Terraform service account
+
+   ```shell
+   $ terraform plan -var-file env/ENV/name.tfvars
+   $ terraform apply -var-file env/ENV/name.tfvars
+   ...
+   tf_sa = terraform@PROJECT_ID.iam.gserviceccount.com
+   tf_state_bucket = TF_BUCKET_NAME
+   ```
+
+1. Uncomment line 12 [`main.tf`](main.tf#L12) to enable GCS backend
+   1. Edit the new `config` environment file and add the Terraform state bucket that was an ouput from step 3
+   1. Add a unique prefix for the bootstrap state
+   E.g.
+
+   ```hcl
+   bucket = "TF_BUCKET_NAME"
+   prefix = "foundations/terraform-bootstrap"
+   ```
+
+1. Reinitialise Terraform to migrate the state to GCS bucket
+
+   ```shell
+   $ terraform init -backend-config env/ENV/name.config
+   ...
+   Initializing the backend...
+   Do you want to copy existing state to the new backend?
+      Pre-existing state was found while migrating the previous "local" backend to the newly configured "gcs" backend. No existing state was found in the newly configured "gcs" backend. Do you want to copy this state to the new "gcs" backend? Enter "yes" to copy and "no" to start with an empty state.
+
+      Enter a value: yes
+
+   Successfully configured the backend "gcs"! Terraform will automatically use this backend unless the backend configuration changes.
+   ...
+   ```
+
+   The Terraform state is now stored in GCS bucket and can be shared by others that are managing the project.
+1. Push the changes to GitHub and open a PR to merge to `master`
+
+## Environments
+
+1. [F5 Sales project](env/f5-sales/)
+   Non-Shared VPC project used by multiple engineers in the Sales organization.
+1. [F5 Sales Shared VPC projects](env/f5-sales-shared-vpc/)
+   Projects setup as a Shared VPC host and service pair. Note that this environment has separate config pairs for the host and service project.
+
 <!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 ## Requirements
 
