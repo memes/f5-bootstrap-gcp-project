@@ -35,7 +35,7 @@ During execution the script will create these resources:
 | tf\_bucket\_name | The name of a GCS bucket to create for Terraform state storage. This name must be<br>unique in GCP. If blank, (the default), the name will be 'tf-PROJECT\_ID', where<br>PROJECT\_ID is the unique project identifier. | `string` | `""` | no |
 | tf\_sa\_impersonate\_groups | A list of groups that will be allowed to impersonate the Terraform service account.<br>If no groups are supplied, impersonation will not be setup by the script.<br>E.g.<br>tf\_sa\_impersonate\_groups = [<br>  "devsecops@example.com",<br>  "admins@example.com",<br>] | `list(string)` | `[]` | no |
 | tf\_sa\_name | The name of the service account to add to the project. Default is 'terraform'. | `string` | `"terraform"` | no |
-| tf\_sa\_roles | A list of IAM roles to assign to the Terraform service account. Defaults to a set<br>needed to manage Compute resources, GCS buckets, and IAM assignments. | `list(string)` | <pre>[<br>  "roles/compute.admin",<br>  "roles/iam.serviceAccountAdmin",<br>  "roles/iam.serviceAccountKeyAdmin",<br>  "roles/iam.serviceAccountTokenCreator",<br>  "roles/storage.admin",<br>  "roles/resourcemanager.projectIamAdmin"<br>]</pre> | no |
+| tf\_sa\_roles | A list of IAM roles to assign to the Terraform service account. Defaults to a set<br>needed to manage Compute resources, GCS buckets, and IAM assignments. | `list(string)` | <pre>[<br>  "roles/compute.admin",<br>  "roles/iam.serviceAccountAdmin",<br>  "roles/iam.serviceAccountKeyAdmin",<br>  "roles/iam.serviceAccountTokenCreator",<br>  "roles/storage.admin",<br>  "roles/resourcemanager.projectIamAdmin",<br>  "roles/iam.serviceAccountUser"<br>]</pre> | no |
 
 ## Outputs
 
