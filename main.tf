@@ -25,17 +25,17 @@ resource "google_service_account" "tf" {
 
 # Bind the impersonation privileges to the Terraform service account if group
 # list is not empty.
-resource "google_service_account_iam_binding" "tf_impersonate_user" {
-  count              = length(var.tf_sa_impersonate_groups) > 0 ? 1 : 0
+resource "google_service_account_iam_member" "tf_impersonate_user" {
+  for_each           = toset(var.tf_sa_impersonate_groups)
   service_account_id = google_service_account.tf.name
   role               = "roles/iam.serviceAccountUser"
-  members            = formatlist("group:%s", var.tf_sa_impersonate_groups)
+  member             = format("group:%s", each.value)
 }
-resource "google_service_account_iam_binding" "tf_impersonate_token" {
-  count              = length(var.tf_sa_impersonate_groups) > 0 ? 1 : 0
+resource "google_service_account_iam_member" "tf_impersonate_token" {
+  for_each           = toset(var.tf_sa_impersonate_groups)
   service_account_id = google_service_account.tf.name
   role               = "roles/iam.serviceAccountTokenCreator"
-  members            = formatlist("group:%s", var.tf_sa_impersonate_groups)
+  member             = format("group:%s", each.value)
 }
 
 # Create a bucket for Terraform state
