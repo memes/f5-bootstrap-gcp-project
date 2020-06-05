@@ -133,6 +133,16 @@ resource "google_secret_manager_secret_version" "tf_creds" {
   secret_data = base64decode(google_service_account_key.tf_creds.private_key)
 }
 
+# Allow the supplied accounts to read the Terraform JSON credentials
+# NOTE: These are additive, and will not unassign existing IAM privileges
+resource "google_secret_manager_secret_iam_member" "tf_creds" {
+  for_each  = toset(var.tf_sa_creds_secret_readers)
+  project   = var.project_id
+  secret_id = google_secret_manager_secret.tf_creds.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = each.value
+}
+
 # Create a slot for Ansible credential store in Secret Manager
 resource "google_secret_manager_secret" "ansible_creds" {
   project   = var.project_id
@@ -146,4 +156,14 @@ resource "google_secret_manager_secret" "ansible_creds" {
 resource "google_secret_manager_secret_version" "ansible_creds" {
   secret      = google_secret_manager_secret.ansible_creds.id
   secret_data = base64decode(google_service_account_key.ansible.private_key)
+}
+
+# Allow the supplied accounts to read the Ansible JSON credentials
+# NOTE: These are additive, and will not unassign existing IAM privileges
+resource "google_secret_manager_secret_iam_member" "ansible_creds" {
+  for_each  = toset(var.ansible_sa_creds_secret_readers)
+  project   = var.project_id
+  secret_id = google_secret_manager_secret.ansible_creds.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = each.value
 }
