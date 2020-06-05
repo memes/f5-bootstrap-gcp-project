@@ -28,3 +28,6 @@ tf_sa_roles = [
   "roles/source.admin",
   "roles/secretmanager.admin",
 ]
+ansible_sa_creds_secret_readers = [
+  "serviceAccount:234726409239@cloudbuild.gserviceaccount.com"
+]
