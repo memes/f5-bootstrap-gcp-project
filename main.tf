@@ -23,6 +23,11 @@ resource "google_service_account" "tf" {
   display_name = "Terraform automation service account"
 }
 
+# Create a key for Terraform SA
+resource "google_service_account_key" "tf_creds" {
+  service_account_id = google_service_account.tf.name
+}
+
 # Bind the impersonation privileges to the Terraform service account if group
 # list is not empty.
 resource "google_service_account_iam_member" "tf_impersonate_user" {
@@ -59,9 +64,9 @@ resource "google_storage_bucket_iam_member" "tf_bucket_admin" {
 
 # Enable any GCP APIs needed
 resource "google_project_service" "apis" {
-  count   = length(var.apis)
-  project = var.project_id
-  service = element(var.apis, count.index)
+  for_each = toset(var.apis)
+  project  = var.project_id
+  service  = each.value
   # Shared project - don't disable the API on destroy in case someone else has
   # a dependency on it
   disable_on_destroy = false
@@ -71,10 +76,10 @@ resource "google_project_service" "apis" {
 #
 # NOTE: all these are additive, and will not unassign existing IAM privileges
 resource "google_project_iam_member" "tf_sa_roles" {
-  count   = length(var.tf_sa_roles)
-  project = var.project_id
-  role    = element(var.tf_sa_roles, count.index)
-  member  = format("serviceAccount:%s", google_service_account.tf.email)
+  for_each = toset(var.tf_sa_roles)
+  project  = var.project_id
+  role     = each.value
+  member   = format("serviceAccount:%s", google_service_account.tf.email)
 
   depends_on = [google_project_service.apis]
 }
@@ -87,4 +92,58 @@ resource "google_project_iam_member" "oslogin" {
   member   = format("group:%s", each.value)
 
   depends_on = [google_project_service.apis]
+}
+
+# Create a service account for Ansible
+resource "google_service_account" "ansible" {
+  project      = var.project_id
+  account_id   = coalesce(var.ansible_sa_name, "ansible")
+  display_name = "Ansible automation service account"
+}
+
+# Create a key for Ansible SA
+resource "google_service_account_key" "ansible" {
+  service_account_id = google_service_account.ansible.name
+}
+
+# Assign IAM roles to Ansible service account
+#
+# NOTE: all these are additive, and will not unassign existing IAM privileges
+resource "google_project_iam_member" "ansible_sa_roles" {
+  for_each = toset(var.ansible_sa_roles)
+  project  = var.project_id
+  role     = each.value
+  member   = format("serviceAccount:%s", google_service_account.ansible.email)
+
+  depends_on = [google_project_service.apis]
+}
+
+# Create a slot for Terraform credential store in Secret Manager
+resource "google_secret_manager_secret" "tf_creds" {
+  project   = var.project_id
+  secret_id = coalesce(var.tf_sa_creds_secret_id, "terraform-creds")
+  replication {
+    automatic = true
+  }
+}
+
+# Stash the Terraform JSON credentials in Secret Manager
+resource "google_secret_manager_secret_version" "tf_creds" {
+  secret      = google_secret_manager_secret.tf_creds.id
+  secret_data = base64decode(google_service_account_key.tf_creds.private_key)
+}
+
+# Create a slot for Ansible credential store in Secret Manager
+resource "google_secret_manager_secret" "ansible_creds" {
+  project   = var.project_id
+  secret_id = coalesce(var.ansible_sa_creds_secret_id, "ansible-creds")
+  replication {
+    automatic = true
+  }
+}
+
+# Stash the Ansible JSON credentials in Secret Manager
+resource "google_secret_manager_secret_version" "ansible_creds" {
+  secret      = google_secret_manager_secret.ansible_creds.id
+  secret_data = base64decode(google_service_account_key.ansible.private_key)
 }

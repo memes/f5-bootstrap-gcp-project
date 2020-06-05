@@ -15,7 +15,7 @@ apis = [
   "cloudresourcemanager.googleapis.com",
   "cloudbuild.googleapis.com",
   "sourcerepo.googleapis.com",
-  "cloudkms.googleapis.com",
+  "secretmanager.googleapis.com",
 ]
 tf_sa_roles = [
   "roles/compute.admin",
@@ -26,5 +26,5 @@ tf_sa_roles = [
   "roles/resourcemanager.projectIamAdmin",
   "roles/cloudbuild.builds.editor",
   "roles/source.admin",
-  "roles/cloudkms.admin",
+  "roles/secretmanager.admin",
 ]

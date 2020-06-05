@@ -11,3 +11,10 @@ The GCS bucket that will hold Terraform state.
 EOD
   value       = google_storage_bucket.tf_bucket.name
 }
+
+output "ansible_sa" {
+  description = <<EOD
+The fully-qualified Ansible service account identifier.
+EOD
+  value       = google_service_account.ansible.email
+}
