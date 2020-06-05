@@ -1,5 +1,5 @@
-# This module adds a Terraform service account to the project, and allows members
-# of a group to impersonate the account.
+# This module adds a Terraform and an Ansible service account to the project,
+# and allows members of a group to impersonate the account.
 #
 # Note: GCS backend requires the current user to have valid application-default
 # credentials. An error like '... failed: dialing: google: could not find default

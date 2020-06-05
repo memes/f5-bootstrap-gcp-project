@@ -1,25 +1,35 @@
-# Terraform bootstrap
+# F5 project bootstrap
 
-This repo is used to prepare existing F5 GCP projects for Terraform automation.
-During execution the script will create these resources:
+This repo is used to prepare existing F5 GCP projects for Terraform and Ansible
+automation. During execution, Terraform will bootstrap the project to create
+these resources:
 
 1. Terraform GCS bucket for remote state
 1. Enables Compute Engine and IAP APIs by default
+1. Enables OS Login for GCE instances at the project level
 1. A service account to use for Terraform automation
    - with storage admin rights on Terraform state bucket
-   - with an extendible set of roles at project
+   - with an extendible set of roles at project level
    - with optional impersonation enabled for AD group(s)
+1. A service account to use for Ansible automation
+   - with an extendible set of roles at project level
+   - with optional impersonation enabled for AD group(s)
+1. Initialises Secret Manager and stores the JSON credential files for Terraform
+   and Ansible service accounts
 
 ## Usage
 
 This repo uses file based environment configurations in preference to Terraform
-workspaces. Per-environment configurations are stored in `env/ENV/name.{config,tfvars}`, where ENV and name represents the GCP project enviornment to manage.
+workspaces. Per-environment configurations are stored in
+`env/ENV/name.{config,tfvars}`, where ENV and name represents the GCP project
+enviornment to manage.
 
 ### To make a change to an **existing** project
 
-To make changes to an existing project to add additional impersonation groups, or to enable other GCP APIs
+To make changes to an existing project to add additional impersonation groups,
+or to enable other GCP APIs
 
-1. Branch the repo
+1. Fork the repo
 1. Edit the relevant environment `tfvars` file
 1. Execute standard Terraform process
 
@@ -34,25 +44,32 @@ To make changes to an existing project to add additional impersonation groups, o
 
 If you need to bootstrap a new GCP project to support Terraform automation:
 
-1. Branch the repo
+1. Fork the repo
 1. Create a new `env` folder for the project, with a `config` and `tfvar` file.
-   - Edit the new `tfvar` file and set `project_id` to the unique GCP project id
-   - *Optional:* Add AD groups that will be granted the ability to impersonate Terraform service account
+   - Edit the new `tfvar` file and set `project_id` to match the target GCP
+     project id
+   - Add AD groups that will be granted the ability to impersonate Terraform
+     service account
+   - Add AD groups that will be able to retrieve Ansible service account
+     credentials from Secret Manager
    - *Optional:* Add any Google Cloud APIs that need to be enabled
-   - *Optional:* Add any roles that should be granted to the Terraform service account
-1. Comment out line 12 [`main.tf`](main.tf#L12) to disable the GCS backend; this will be reverted after the state bucket is bootstrapped.
-1. Execute Terraform to create the Terraform state bucket and Terraform service account
+   - *Optional:* Add any additional roles that should be granted to the
+     Terraform and/or Ansible service accounts
+1. Comment out line 12 [`main.tf`](main.tf#L12) to disable the GCS backend; this
+   will be reverted after the state bucket is bootstrapped.
+1. Execute Terraform to create the new resources
 
    ```shell
    $ terraform plan -var-file env/ENV/name.tfvars
    $ terraform apply -var-file env/ENV/name.tfvars
    ...
    tf_sa = terraform@PROJECT_ID.iam.gserviceccount.com
+   ...
    tf_state_bucket = TF_BUCKET_NAME
    ```
 
 1. Uncomment line 12 [`main.tf`](main.tf#L12) to enable GCS backend
-   1. Edit the new `config` environment file and add the Terraform state bucket that was an ouput from step 3
+   1. Edit the new `config` environment file and add the Terraform state bucket that was an ouput from step 4
    1. Add a unique prefix for the bootstrap state
    E.g.
 
@@ -77,7 +94,7 @@ If you need to bootstrap a new GCP project to support Terraform automation:
    ```
 
    The Terraform state is now stored in GCS bucket and can be shared by others that are managing the project.
-1. Push the changes to GitHub and open a PR to merge to `master`
+1. Commit and push the changes to GitHub, and open a PR to merge to `master`
 
 ## Environments
 
