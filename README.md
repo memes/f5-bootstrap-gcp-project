@@ -1,6 +1,12 @@
 # F5 project bootstrap
 
-This repo is used to prepare existing F5 GCP projects for Terraform and Ansible
+> NOTE: this repo is a poor substitute for a true GCP Project Factory and
+> Organzition policy. I recommend Google's published
+> [Terraform modules](https://registry.terraform.io/modules/terraform-google-modules)
+> to implement a fully defined approach to project creation and birthright
+> accounts.
+
+Use these files to prepare existing F5 GCP projects for Terraform and Ansible
 automation. During execution, Terraform will bootstrap the project to create
 these resources:
 
@@ -34,15 +40,18 @@ or to enable other GCP APIs
 1. Execute standard Terraform process
 
    ```shell
-   $ terraform init -backend-config env/ENV/name.config
-   $ terraform plan -var-file env/ENV/name.tfvars
-   $ terraform apply -var-file env/ENV/name.tfvars
+   terraform init -backend-config env/ENV/name.config
+   terraform plan -var-file env/ENV/name.tfvars
+   terraform apply -var-file env/ENV/name.tfvars
    ```
+
 1. Push the changes to GitHub and open a PR to merge to `master`
 
 ### To bootstrap a **new** project
 
-If you need to bootstrap a new GCP project to support Terraform automation:
+If you need to bootstrap a new GCP project to support Terraform automation, you must apply the Terraform twice.
+
+#### A. Bootstrap project
 
 1. Fork the repo
 1. Create a new `env` folder for the project, with a `config` and `tfvar` file.
@@ -60,17 +69,24 @@ If you need to bootstrap a new GCP project to support Terraform automation:
 1. Execute Terraform to create the new resources
 
    ```shell
-   $ terraform plan -var-file env/ENV/name.tfvars
-   $ terraform apply -var-file env/ENV/name.tfvars
+   terraform plan -var-file env/ENV/name.tfvars
+   terraform apply -var-file env/ENV/name.tfvars
+   ```
+
+   ```shell
    ...
    tf_sa = terraform@PROJECT_ID.iam.gserviceccount.com
    ...
    tf_state_bucket = TF_BUCKET_NAME
    ```
 
+At this point a the service accounts are created and a new GCS bucket is ready to manage Terraform state.
+
+#### B. Transfer state to new GCS bucket
+
 1. Uncomment line 12 [`main.tf`](main.tf#L12) to enable GCS backend
-   1. Edit the new `config` environment file and add the Terraform state bucket that was an ouput from step 4
-   1. Add a unique prefix for the bootstrap state
+1. Edit the new `config` environment file and add the Terraform state bucket that was an ouput from step A.4
+1. Add a unique prefix for the bootstrap state.
    E.g.
 
    ```hcl
@@ -81,7 +97,10 @@ If you need to bootstrap a new GCP project to support Terraform automation:
 1. Reinitialise Terraform to migrate the state to GCS bucket
 
    ```shell
-   $ terraform init -backend-config env/ENV/name.config
+   terraform init -backend-config env/ENV/name.config
+   ```
+
+   ```shell
    ...
    Initializing the backend...
    Do you want to copy existing state to the new backend?
@@ -94,7 +113,38 @@ If you need to bootstrap a new GCP project to support Terraform automation:
    ```
 
    The Terraform state is now stored in GCS bucket and can be shared by others that are managing the project.
+
 1. Commit and push the changes to GitHub, and open a PR to merge to `master`
+
+## Optional next-steps (not automated)
+
+In my article I talked about the recommendations usually provided by a true
+Project Factory module, but I decided not to include all of those in this script
+because it may break existing deployments or interfere with another SEs
+resources. If you are certain that it is safe to do so, use these commands to
+disable the Default Compute service account, and remove the `default` network.
+
+### Disable Default Compute service account
+
+1. Get the target project number from UI, or command line
+
+   ```shell
+   gcloud projects describe PROJECT_ID --format 'value(projectNumber)'
+   ```
+
+   ```shell
+   nnnnnnnnnnnn
+   ```
+
+1. Disable the Default Compute service account
+
+   ```shell
+   gcloud iam service-accounts disable nnnnnnnnnnnn-compute@developer.gserviceaccount.com --project PROJECT_ID
+   ```
+
+   ```shell
+   Disabled service account [nnnnnnnnnnnn-compute@developer.gserviceaccount.com].
+   ```
 
 ## Environments
 
@@ -103,6 +153,7 @@ If you need to bootstrap a new GCP project to support Terraform automation:
 1. [F5 Sales Shared VPC projects](env/f5-sales-shared-vpc/)
    Projects setup as a Shared VPC host and service pair. Note that this environment has separate config pairs for the host and service project.
 
+<!-- markdownlint-disable no-inline-html -->
 <!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 ## Requirements
 
@@ -148,3 +199,4 @@ If you need to bootstrap a new GCP project to support Terraform automation:
 | tf\_state\_bucket | The GCS bucket that will hold Terraform state. |
 
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+<!-- markdownlint-enable no-inline-html -->
