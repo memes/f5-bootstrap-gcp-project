@@ -24,6 +24,7 @@ tf_sa_roles = [
   "roles/iam.serviceAccountTokenCreator",
   "roles/storage.admin",
   "roles/resourcemanager.projectIamAdmin",
+  "roles/iam.serviceAccountUser",
   "roles/cloudbuild.builds.editor",
   "roles/source.admin",
   "roles/secretmanager.admin",
