@@ -16,6 +16,8 @@ apis = [
   "cloudbuild.googleapis.com",
   "sourcerepo.googleapis.com",
   "secretmanager.googleapis.com",
+  "cloudfunctions.googleapis.com",
+  "vpcaccess.googleapis.com",
 ]
 tf_sa_roles = [
   "roles/compute.admin",
