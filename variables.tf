@@ -9,7 +9,8 @@ variable "tf_sa_name" {
   type        = string
   default     = "terraform"
   description = <<EOD
-The name of the service account to add to the project. Default is 'terraform'.
+The name of the Terraform service account to add to the project. Default is
+'terraform'.
 EOD
 }
 
@@ -56,6 +57,7 @@ variable "apis" {
     "iam.googleapis.com",
     "iamcredentials.googleapis.com",
     "cloudresourcemanager.googleapis.com",
+    "secretmanager.googleapis.com",
   ]
   description = <<EOD
 An optional list of GCP APIs to enable in the project.
@@ -72,10 +74,11 @@ variable "tf_sa_roles" {
     "roles/storage.admin",
     "roles/resourcemanager.projectIamAdmin",
     "roles/iam.serviceAccountUser",
+    "roles/secretmanager.admin",
   ]
   description = <<EOD
 A list of IAM roles to assign to the Terraform service account. Defaults to a set
-needed to manage Compute resources, GCS buckets, and IAM assignments.
+needed to manage Compute resources, GCS buckets, IAM, and Secret Manager assignments.
 EOD
 }
 
@@ -88,6 +91,106 @@ E.g.
 oslogin_groups = [
   "devsecops@example.com",
   "admins@example.com",
+]
+EOD
+}
+
+variable "tf_sa_creds_secret_id" {
+  type        = string
+  default     = "terraform-creds"
+  description = <<EOD
+The unique identifier to use for Terraform credential store in Secret Manager.
+Default is 'terraform-creds'.
+EOD
+}
+
+variable "tf_sa_creds_secret_readers" {
+  type        = list(string)
+  default     = []
+  description = <<EOD
+A list of accounts that will be granted read-only access to the Terraform JSON
+credentials in Secret Manager. Default is an empty list. Terraform fully
+supports impersonation; prefer `tf_sa_impersonate_groups` to add groups
+permitted to impersonate Terraform SA.
+
+NOTE: this variable is less opinionated and is a raw list of accounts that will
+be granted read-only access; each account must be prefixed with 'group:',
+'serviceAccount:', or 'user:' as appropriate.
+
+E.g.
+tf_sa_creds_secret_readers = [
+  "group:devsecops@example.com",
+  "serviceAccount:my-service@PROJECT_ID.iam.gserviceaccount.com",
+  "user:jane_doe@example.com",
+]
+EOD
+}
+
+variable "ansible_sa_name" {
+  type        = string
+  default     = "ansible"
+  description = <<EOD
+The name of the Ansible service account to add to the project. Default is
+'ansible'.
+EOD
+}
+
+variable "ansible_sa_impersonate_groups" {
+  type        = list(string)
+  default     = []
+  description = <<EOD
+A list of groups that will be allowed to impersonate the Ansible service account.
+If no groups are supplied, impersonation will not be setup by the script.
+
+NOTE: Ansible does not directly support impersonation; prefer
+`ansible_sa_creds_secret_readers` to add accounts permitted to read the Ansible
+SA JSON credentials.
+
+E.g.
+ansible_sa_impersonate_groups = [
+  "devsecops@example.com",
+  "admins@example.com",
+]
+EOD
+}
+
+variable "ansible_sa_roles" {
+  type = list(string)
+  default = [
+    "roles/compute.viewer",
+    "roles/compute.osLogin",
+  ]
+  description = <<EOD
+A list of IAM roles to assign to the Terraform service account. Defaults to a set
+needed to manage Compute resources, GCS buckets, and IAM assignments.
+EOD
+}
+
+variable "ansible_sa_creds_secret_id" {
+  type        = string
+  default     = "ansible-creds"
+  description = <<EOD
+The unique identifier to use for Ansible credential store in Secret Manager.
+Default is 'ansible-creds'.
+EOD
+}
+
+variable "ansible_sa_creds_secret_readers" {
+  type        = list(string)
+  default     = []
+  description = <<EOD
+A list of accounts that will be granted read-only access to the Ansible JSON
+credentials in Secret Manager. Default is an empty list.
+
+NOTE: this variable is less opinionated and is a raw list of accounts that will
+be granted read-only access; each account must be prefixed with 'group:',
+'serviceAccount:', or 'user:' as appropriate.
+
+E.g.
+ansible_sa_creds_secret_readers = [
+  "group:devsecops@example.com",
+  "serviceAccount:my-service@PROJECT_ID.iam.gserviceaccount.com",
+  "user:jane_doe@example.com",
 ]
 EOD
 }

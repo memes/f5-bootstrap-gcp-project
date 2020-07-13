@@ -15,7 +15,7 @@ apis = [
   "cloudresourcemanager.googleapis.com",
   "cloudbuild.googleapis.com",
   "sourcerepo.googleapis.com",
-  "cloudkms.googleapis.com",
+  "secretmanager.googleapis.com",
 ]
 tf_sa_roles = [
   "roles/compute.admin",
@@ -24,7 +24,11 @@ tf_sa_roles = [
   "roles/iam.serviceAccountTokenCreator",
   "roles/storage.admin",
   "roles/resourcemanager.projectIamAdmin",
+  "roles/iam.serviceAccountUser",
   "roles/cloudbuild.builds.editor",
   "roles/source.admin",
-  "roles/cloudkms.admin",
+  "roles/secretmanager.admin",
+]
+ansible_sa_creds_secret_readers = [
+  "serviceAccount:234726409239@cloudbuild.gserviceaccount.com"
 ]

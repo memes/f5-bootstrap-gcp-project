@@ -1,5 +1,6 @@
 # Ignore my direnv setup
 .envrc
+.direnv
 
 # Ignore Terraform plugin/module cache and local state files
 .terraform
