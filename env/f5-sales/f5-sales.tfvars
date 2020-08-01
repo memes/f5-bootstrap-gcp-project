@@ -30,6 +30,7 @@ tf_sa_roles = [
   "roles/cloudbuild.builds.editor",
   "roles/source.admin",
   "roles/secretmanager.admin",
+  "roles/vpcaccess.admin",
 ]
 ansible_sa_creds_secret_readers = [
   "serviceAccount:234726409239@cloudbuild.gserviceaccount.com"
