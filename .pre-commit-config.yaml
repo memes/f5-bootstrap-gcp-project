@@ -1,11 +1,13 @@
+# spell-checker: ignore repos autofix
+---
 repos:
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.29.0
+    rev: v1.43.0
     hooks:
       - id: terraform_fmt
       - id: terraform_docs
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.5.0
+    rev: v3.3.0
     hooks:
       - id: check-executables-have-shebangs
       - id: check-json
@@ -19,6 +21,6 @@ repos:
       - id: sort-simple-yaml
       - id: trailing-whitespace
   - repo: https://github.com/thoughtworks/talisman
-    rev: v1.2.0
+    rev: v1.9.0
     hooks:
       - id: talisman-commit

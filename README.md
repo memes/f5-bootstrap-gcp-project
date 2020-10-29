@@ -160,13 +160,13 @@ disable the Default Compute service account, and remove the `default` network.
 | Name | Version |
 |------|---------|
 | terraform | ~> 0.12 |
-| google | ~> 3.14 |
+| google | ~> 3.45 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| google | ~> 3.14 |
+| google | ~> 3.45 |
 
 ## Inputs
 
