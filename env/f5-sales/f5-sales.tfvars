@@ -18,6 +18,9 @@ apis = [
   "secretmanager.googleapis.com",
   "cloudfunctions.googleapis.com",
   "vpcaccess.googleapis.com",
+  "container.googleapis.com",
+  "dns.googleapis.com",
+  "anthos.googleapis.com",
 ]
 tf_sa_roles = [
   "roles/compute.admin",
@@ -31,6 +34,10 @@ tf_sa_roles = [
   "roles/source.admin",
   "roles/secretmanager.admin",
   "roles/vpcaccess.admin",
+  "roles/container.clusterAdmin",
+  "roles/dns.admin",
+  "roles/iam.roleAdmin",
+  "roles/iam.securityAdmin",
 ]
 ansible_sa_creds_secret_readers = [
   "serviceAccount:234726409239@cloudbuild.gserviceaccount.com"
