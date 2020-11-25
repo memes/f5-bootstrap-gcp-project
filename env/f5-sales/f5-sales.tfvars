@@ -1,10 +1,10 @@
 project_id = "f5-gcs-4138-sales-cloud-sales"
-tf_sa_impersonate_groups = [
-  "app-gcs_4138_sales_cloud_sales_users@f5.com",
-  "app-gcs_4138_sales_cloud_sales_admin@f5.com",
+tf_sa_impersonators = [
+  "group:app-gcs_4138_sales_cloud_sales_users@f5.com",
+  "group:app-gcs_4138_sales_cloud_sales_admin@f5.com",
 ]
-oslogin_groups = [
-  "app-gcs_4138_sales_cloud_sales_users@f5.com",
+oslogin_accounts = [
+  "group:app-gcs_4138_sales_cloud_sales_users@f5.com",
 ]
 apis = [
   "compute.googleapis.com",
@@ -20,7 +20,6 @@ apis = [
   "vpcaccess.googleapis.com",
   "container.googleapis.com",
   "dns.googleapis.com",
-  "anthos.googleapis.com",
 ]
 tf_sa_roles = [
   "roles/compute.admin",
