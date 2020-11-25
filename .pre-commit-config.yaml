@@ -1,4 +1,4 @@
-# spell-checker: ignore repos autofix
+# spell-checker: ignore repos autofix scanwithrc
 ---
 repos:
   - repo: https://github.com/antonbabenko/pre-commit-terraform

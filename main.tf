@@ -13,7 +13,7 @@ terraform {
 }
 
 provider "google" {
-  version = "~> 3.45"
+  version = "~> 3.49"
 }
 
 # Create the Terraform service account
