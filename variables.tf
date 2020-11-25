@@ -14,16 +14,19 @@ The name of the Terraform service account to add to the project. Default is
 EOD
 }
 
-variable "tf_sa_impersonate_groups" {
+variable "tf_sa_impersonators" {
   type        = list(string)
   default     = []
   description = <<EOD
-A list of groups that will be allowed to impersonate the Terraform service account.
-If no groups are supplied, impersonation will not be setup by the script.
+A list of fully-qualified IAM accounts that will be allowed to impersonate the
+Terraform service account. If no accounts are supplied, impersonation will not
+be setup by the script.
 E.g.
-tf_sa_impersonate_groups = [
-  "devsecops@example.com",
-  "admins@example.com",
+tf_sa_impersonators = [
+  "group:devsecops@example.com",
+  "group:admins@example.com",
+  "user:jane@example.com",
+  "serviceAccount:ci-cd@project.iam.gserviceaccount.com",
 ]
 EOD
 }
@@ -82,15 +85,17 @@ needed to manage Compute resources, GCS buckets, IAM, and Secret Manager assignm
 EOD
 }
 
-variable "oslogin_groups" {
+variable "oslogin_accounts" {
   type        = list(string)
   default     = []
   description = <<EOD
-A list of groups that will be allowed to use OS Login to VMs.
+A list of fully-qualified IAM accounts that will be allowed to use OS Login to
+VMs.
 E.g.
-oslogin_groups = [
-  "devsecops@example.com",
-  "admins@example.com",
+oslogin_accounts = [
+  "group:devsecops@example.com",
+  "group:admins@example.com",
+  "user:jane@example.com",
 ]
 EOD
 }
