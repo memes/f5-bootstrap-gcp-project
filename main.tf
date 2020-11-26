@@ -53,13 +53,15 @@ resource "google_storage_bucket" "tf_bucket" {
   }
 }
 
-# Allow the Terraform service account to be a storage admin on the bucket
+# Allow the Terraform service account and impersonators to be a storage admin on
+# the bucket
 #
 # NOTE: this does not change associations of other members
 resource "google_storage_bucket_iam_member" "tf_bucket_admin" {
-  bucket = google_storage_bucket.tf_bucket.name
-  role   = "roles/storage.admin"
-  member = format("serviceAccount:%s", google_service_account.tf.email)
+  for_each = toset(concat([format("serviceAccount:%s", google_service_account.tf.email)], var.tf_sa_impersonators))
+  bucket   = google_storage_bucket.tf_bucket.name
+  role     = "roles/storage.admin"
+  member   = each.value
 }
 
 # Enable any GCP APIs needed
