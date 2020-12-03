@@ -23,6 +23,12 @@ resource "google_service_account" "tf" {
   display_name = "Terraform automation service account"
 }
 
+locals {
+  # The email address for TF service account is predictable so we can use it
+  # where needed without introducing a cyclic dependency.
+  tf_sa_iam_email = format("serviceAccount:%s@%s.iam.gserviceaccount.com", coalesce(var.tf_sa_name, "terraform"), var.project_id)
+}
+
 # Create a key for Terraform SA
 resource "google_service_account_key" "tf_creds" {
   service_account_id = google_service_account.tf.name
@@ -58,7 +64,7 @@ resource "google_storage_bucket" "tf_bucket" {
 #
 # NOTE: this does not change associations of other members
 resource "google_storage_bucket_iam_member" "tf_bucket_admin" {
-  for_each = toset(concat([format("serviceAccount:%s", google_service_account.tf.email)], var.tf_sa_impersonators))
+  for_each = toset(concat([local.tf_sa_iam_email], var.tf_sa_impersonators))
   bucket   = google_storage_bucket.tf_bucket.name
   role     = "roles/storage.admin"
   member   = each.value
@@ -81,7 +87,7 @@ resource "google_project_iam_member" "tf_sa_roles" {
   for_each = toset(var.tf_sa_roles)
   project  = var.project_id
   role     = each.value
-  member   = format("serviceAccount:%s", google_service_account.tf.email)
+  member   = local.tf_sa_iam_email
 
   depends_on = [google_project_service.apis]
 }
