@@ -6,14 +6,20 @@
 # credenitals' indicates that the calling user must (re-)authenticate application
 # default credentials using `gcloud auth application-default login`.
 terraform {
-  required_version = "~> 0.12"
+  required_version = "~> 1.0"
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 3.72"
+    }
+  }
+
   # After bucket is created, the state can be migrated to the GCS location by
   # setting bucket and prefix in env/[ENV]/[NAME].config
   backend "gcs" {}
 }
 
 provider "google" {
-  version = "~> 3.49"
 }
 
 # Create the Terraform service account

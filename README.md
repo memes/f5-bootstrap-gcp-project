@@ -159,14 +159,14 @@ disable the Default Compute service account, and remove the `default` network.
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | ~> 0.12 |
-| <a name="requirement_google"></a> [google](#requirement\_google) | ~> 3.49 |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | ~> 1.0 |
+| <a name="requirement_google"></a> [google](#requirement\_google) | ~> 3.72 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_google"></a> [google](#provider\_google) | 3.55.0 |
+| <a name="provider_google"></a> [google](#provider\_google) | 3.72.0 |
 
 ## Modules
 
