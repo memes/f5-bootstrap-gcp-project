@@ -1,0 +1,5 @@
+# spell-checker: ignore fileignoreconfig
+---
+fileignoreconfig:
+- filename: README.md
+  checksum: 2cc8d4387226cbe546f383b7fb4a1191667a5882791f7feed5b3e55f53536b86

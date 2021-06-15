@@ -78,6 +78,7 @@ variable "tf_sa_roles" {
     "roles/resourcemanager.projectIamAdmin",
     "roles/iam.serviceAccountUser",
     "roles/secretmanager.admin",
+    "roles/iam.roleAdmin",
   ]
   description = <<EOD
 A list of IAM roles to assign to the Terraform service account. Defaults to a set
