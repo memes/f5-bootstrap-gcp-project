@@ -6,3 +6,29 @@ tf_sa_impersonators = [
 oslogin_accounts = [
   "group:app-gcs_4261_sales_shrdvpc_host_users@f5.com",
 ]
+apis = [
+  # Defaults
+  "compute.googleapis.com",
+  "iap.googleapis.com",
+  "oslogin.googleapis.com",
+  "iam.googleapis.com",
+  "iamcredentials.googleapis.com",
+  "cloudresourcemanager.googleapis.com",
+  "secretmanager.googleapis.com",
+  # NCC
+  "networkconnectivity.googleapis.com",
+]
+tf_sa_roles = [
+  # Defaults
+  "roles/compute.admin",
+  "roles/iam.serviceAccountAdmin",
+  "roles/iam.serviceAccountKeyAdmin",
+  "roles/iam.serviceAccountTokenCreator",
+  "roles/storage.admin",
+  "roles/resourcemanager.projectIamAdmin",
+  "roles/iam.serviceAccountUser",
+  "roles/secretmanager.admin",
+  "roles/iam.roleAdmin",
+  # NCC
+  "roles/networkconnectivity.hubAdmin",
+]

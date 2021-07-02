@@ -181,3 +181,25 @@ resource "google_secret_manager_secret_iam_member" "ansible_creds" {
   role      = "roles/secretmanager.secretAccessor"
   member    = each.value
 }
+
+data "google_compute_default_service_account" "default" {
+  project = var.project_id
+
+  depends_on = [google_project_service.apis]
+}
+data "google_app_engine_default_service_account" "default" {
+  project = var.project_id
+
+  depends_on = [google_project_service.apis]
+}
+
+# Bind service account user role to default compute service account (if present)
+# for Terraform service account
+resource "google_service_account_iam_member" "tf_default" {
+  for_each           = toset(compact([for sa in [data.google_compute_default_service_account.default, data.google_app_engine_default_service_account.default] : sa.name if sa != null]))
+  service_account_id = each.value
+  role               = "roles/iam.serviceAccountUser"
+  member             = format("serviceAccount:%s", google_service_account.tf.email)
+
+  depends_on = [google_project_service.apis]
+}
