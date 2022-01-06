@@ -196,7 +196,10 @@ resource "google_service_account_iam_member" "tf_default" {
   for_each           = toset(compact([for sa in [data.google_compute_default_service_account.default, data.google_app_engine_default_service_account.default] : sa.name if sa != null]))
   service_account_id = each.value
   role               = "roles/iam.serviceAccountUser"
-  member             = format("serviceAccount:%s", google_service_account.tf.email)
+  member             = local.tf_sa_iam_email
 
-  depends_on = [google_project_service.apis]
+  depends_on = [
+    google_service_account.tf,
+    google_project_service.apis,
+  ]
 }
