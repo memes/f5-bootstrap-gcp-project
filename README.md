@@ -69,8 +69,8 @@ If you need to bootstrap a new GCP project to support Terraform automation, you 
 1. Execute Terraform to create the new resources
 
    ```shell
-   terraform init -backend-config env/ENV/common.config -reconfigure
-   terraform plan -var-file env/ENV/common.tfvars
+   rm -rf .terraform
+   terraform init -backend-config env/ENV/common.config
    terraform apply -var-file env/ENV/common.tfvars
    ```
 
@@ -98,7 +98,7 @@ At this point a the service accounts are created and a new GCS bucket is ready t
 1. Reinitialise Terraform to migrate the state to GCS bucket
 
    ```shell
-   terraform init -backend-config env/ENV/name.config
+   terraform init -backend-config env/ENV/name.config -migrate-state
    ```
 
    ```shell
