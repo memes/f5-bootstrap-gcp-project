@@ -1,7 +1,7 @@
 # F5 project bootstrap
 
 > NOTE: this repo is a poor substitute for a true GCP Project Factory and
-> Organzition policy. I recommend Google's published
+> Organization policy. I recommend Google's published
 > [Terraform modules](https://registry.terraform.io/modules/terraform-google-modules)
 > to implement a fully defined approach to project creation and birthright
 > accounts.
@@ -27,8 +27,8 @@ these resources:
 
 This repo uses file based environment configurations in preference to Terraform
 workspaces. Per-environment configurations are stored in
-`env/ENV/name.{config,tfvars}`, where ENV and name represents the GCP project
-enviornment to manage.
+`env/ENV/common.{config,tfvars}`, where ENV and name represents the GCP project
+environment to manage.
 
 ### To make a change to an **existing** project
 
@@ -40,12 +40,12 @@ or to enable other GCP APIs
 1. Execute standard Terraform process
 
    ```shell
-   terraform init -backend-config env/ENV/name.config
-   terraform plan -var-file env/ENV/name.tfvars
-   terraform apply -var-file env/ENV/name.tfvars
+   terraform init -backend-config env/ENV/common.config
+   terraform plan -var-file env/ENV/common.tfvars
+   terraform apply -var-file env/ENV/common.tfvars
    ```
 
-1. Push the changes to GitHub and open a PR to merge to `master`
+1. Push the changes to GitHub and open a PR to merge to `main`
 
 ### To bootstrap a **new** project
 
@@ -69,8 +69,9 @@ If you need to bootstrap a new GCP project to support Terraform automation, you 
 1. Execute Terraform to create the new resources
 
    ```shell
-   terraform plan -var-file env/ENV/name.tfvars
-   terraform apply -var-file env/ENV/name.tfvars
+   terraform init -backend-config env/ENV/common.config -reconfigure
+   terraform plan -var-file env/ENV/common.tfvars
+   terraform apply -var-file env/ENV/common.tfvars
    ```
 
    ```shell
@@ -159,14 +160,8 @@ disable the Default Compute service account, and remove the `default` network.
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | ~> 1.0 |
-| <a name="requirement_google"></a> [google](#requirement\_google) | ~> 3.72 |
-
-## Providers
-
-| Name | Version |
-|------|---------|
-| <a name="provider_google"></a> [google](#provider\_google) | 3.72.0 |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.0 |
+| <a name="requirement_google"></a> [google](#requirement\_google) | >= 4.5 |
 
 ## Modules
 
@@ -202,6 +197,7 @@ No modules.
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
+| <a name="input_project_id"></a> [project\_id](#input\_project\_id) | The existing project id that will have a Terraform service account added. | `string` | n/a | yes |
 | <a name="input_ansible_sa_creds_secret_id"></a> [ansible\_sa\_creds\_secret\_id](#input\_ansible\_sa\_creds\_secret\_id) | The unique identifier to use for Ansible credential store in Secret Manager.<br>Default is 'ansible-creds'. | `string` | `"ansible-creds"` | no |
 | <a name="input_ansible_sa_creds_secret_readers"></a> [ansible\_sa\_creds\_secret\_readers](#input\_ansible\_sa\_creds\_secret\_readers) | A list of accounts that will be granted read-only access to the Ansible JSON<br>credentials in Secret Manager. Default is an empty list.<br><br>NOTE: this variable is less opinionated and is a raw list of accounts that will<br>be granted read-only access; each account must be prefixed with 'group:',<br>'serviceAccount:', or 'user:' as appropriate.<br><br>E.g.<br>ansible\_sa\_creds\_secret\_readers = [<br>  "group:devsecops@example.com",<br>  "serviceAccount:my-service@PROJECT\_ID.iam.gserviceaccount.com",<br>  "user:jane\_doe@example.com",<br>] | `list(string)` | `[]` | no |
 | <a name="input_ansible_sa_impersonate_groups"></a> [ansible\_sa\_impersonate\_groups](#input\_ansible\_sa\_impersonate\_groups) | A list of groups that will be allowed to impersonate the Ansible service account.<br>If no groups are supplied, impersonation will not be setup by the script.<br><br>NOTE: Ansible does not directly support impersonation; prefer<br>`ansible_sa_creds_secret_readers` to add accounts permitted to read the Ansible<br>SA JSON credentials.<br><br>E.g.<br>ansible\_sa\_impersonate\_groups = [<br>  "devsecops@example.com",<br>  "admins@example.com",<br>] | `list(string)` | `[]` | no |
@@ -209,7 +205,6 @@ No modules.
 | <a name="input_ansible_sa_roles"></a> [ansible\_sa\_roles](#input\_ansible\_sa\_roles) | A list of IAM roles to assign to the Terraform service account. Defaults to a set<br>needed to manage Compute resources, GCS buckets, and IAM assignments. | `list(string)` | <pre>[<br>  "roles/compute.viewer",<br>  "roles/compute.osLogin"<br>]</pre> | no |
 | <a name="input_apis"></a> [apis](#input\_apis) | An optional list of GCP APIs to enable in the project. | `list(string)` | <pre>[<br>  "compute.googleapis.com",<br>  "iap.googleapis.com",<br>  "oslogin.googleapis.com",<br>  "iam.googleapis.com",<br>  "iamcredentials.googleapis.com",<br>  "cloudresourcemanager.googleapis.com",<br>  "secretmanager.googleapis.com"<br>]</pre> | no |
 | <a name="input_oslogin_accounts"></a> [oslogin\_accounts](#input\_oslogin\_accounts) | A list of fully-qualified IAM accounts that will be allowed to use OS Login to<br>VMs.<br>E.g.<br>oslogin\_accounts = [<br>  "group:devsecops@example.com",<br>  "group:admins@example.com",<br>  "user:jane@example.com",<br>] | `list(string)` | `[]` | no |
-| <a name="input_project_id"></a> [project\_id](#input\_project\_id) | The existing project id that will have a Terraform service account added. | `string` | n/a | yes |
 | <a name="input_tf_bucket_location"></a> [tf\_bucket\_location](#input\_tf\_bucket\_location) | The location where the bucket will be created; this could be a GCE region, or a<br>dual-region or multi-region specifier. Default is to create a multi-region bucket<br>in 'US'. | `string` | `"US"` | no |
 | <a name="input_tf_bucket_name"></a> [tf\_bucket\_name](#input\_tf\_bucket\_name) | The name of a GCS bucket to create for Terraform state storage. This name must be<br>unique in GCP. If blank, (the default), the name will be 'tf-PROJECT\_ID', where<br>PROJECT\_ID is the unique project identifier. | `string` | `""` | no |
 | <a name="input_tf_sa_creds_secret_id"></a> [tf\_sa\_creds\_secret\_id](#input\_tf\_sa\_creds\_secret\_id) | The unique identifier to use for Terraform credential store in Secret Manager.<br>Default is 'terraform-creds'. | `string` | `"terraform-creds"` | no |
