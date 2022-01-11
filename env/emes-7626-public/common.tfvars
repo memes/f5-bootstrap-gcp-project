@@ -21,4 +21,6 @@ tf_sa_roles = [
   "roles/source.admin",
   # Allow API management
   "roles/serviceusage.serviceUsageAdmin",
+  # Allow repo management
+  "roles/artifactregistry.repoAdmin",
 ]
