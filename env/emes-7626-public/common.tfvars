@@ -19,4 +19,6 @@ tf_sa_roles = [
   # Cloud Build and source repos
   "roles/cloudbuild.builds.editor",
   "roles/source.admin",
+  # Allow API management
+  "roles/serviceusage.serviceUsageAdmin",
 ]
