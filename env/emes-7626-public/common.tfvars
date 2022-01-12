@@ -6,6 +6,22 @@ tf_sa_impersonators = [
 oslogin_accounts = [
   "group:app-gcs_7626_networks-public_users@f5.com",
 ]
+apis = [
+  # Default
+  "compute.googleapis.com",
+  "iap.googleapis.com",
+  "oslogin.googleapis.com",
+  "iam.googleapis.com",
+  "iamcredentials.googleapis.com",
+  "cloudresourcemanager.googleapis.com",
+  "secretmanager.googleapis.com",
+  # Extras
+  "cloudbuild.googleapis.com",
+  "sourcerepo.googleapis.com",
+  "artifactregistry.googleapis.com",
+  "run.googleapis.com",
+  "appengine.googleapis.com",
+]
 tf_sa_roles = [
   "roles/compute.admin",
   "roles/iam.serviceAccountAdmin",
@@ -23,4 +39,7 @@ tf_sa_roles = [
   "roles/serviceusage.serviceUsageAdmin",
   # Allow repo management
   "roles/artifactregistry.repoAdmin",
+  # Allow management of Cloud Run and AppEngine
+  "roles/run.admin",
+  "roles/appengine.appAdmin",
 ]
