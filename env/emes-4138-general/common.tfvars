@@ -63,7 +63,7 @@ tf_sa_roles = [
   # NCC
   "roles/networkconnectivity.hubAdmin",
   # Allow repo management
-  "roles/artifactregistry.repoAdmin",
+  "roles/artifactregistry.admin",
 ]
 ansible_sa_creds_secret_readers = [
   "serviceAccount:234726409239@cloudbuild.gserviceaccount.com"
