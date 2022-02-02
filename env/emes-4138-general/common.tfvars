@@ -31,6 +31,8 @@ apis = [
   "run.googleapis.com",
   # NCC
   "networkconnectivity.googleapis.com",
+  # Artifact registry
+  "artifactregistry.googleapis.com",
 ]
 tf_sa_roles = [
   # Defaults
@@ -60,6 +62,8 @@ tf_sa_roles = [
   "roles/run.admin",
   # NCC
   "roles/networkconnectivity.hubAdmin",
+  # Allow repo management
+  "roles/artifactregistry.repoAdmin",
 ]
 ansible_sa_creds_secret_readers = [
   "serviceAccount:234726409239@cloudbuild.gserviceaccount.com"
