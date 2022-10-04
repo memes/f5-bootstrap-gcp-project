@@ -32,11 +32,6 @@ locals {
   tf_sa_iam_email = format("serviceAccount:%s@%s.iam.gserviceaccount.com", coalesce(var.tf_sa_name, "terraform"), var.project_id)
 }
 
-# Create a key for Terraform SA
-resource "google_service_account_key" "tf_creds" {
-  service_account_id = google_service_account.tf.name
-}
-
 # Bind the impersonation privileges to the Terraform service account if group
 # list is not empty.
 resource "google_service_account_iam_member" "tf_impersonate_user" {
@@ -112,11 +107,6 @@ resource "google_service_account" "ansible" {
   display_name = "Ansible automation service account"
 }
 
-# Create a key for Ansible SA
-resource "google_service_account_key" "ansible" {
-  service_account_id = google_service_account.ansible.name
-}
-
 # Assign IAM roles to Ansible service account
 #
 # NOTE: all these are additive, and will not unassign existing IAM privileges
@@ -127,56 +117,6 @@ resource "google_project_iam_member" "ansible_sa_roles" {
   member   = format("serviceAccount:%s", google_service_account.ansible.email)
 
   depends_on = [google_project_service.apis]
-}
-
-# Create a slot for Terraform credential store in Secret Manager
-resource "google_secret_manager_secret" "tf_creds" {
-  project   = var.project_id
-  secret_id = coalesce(var.tf_sa_creds_secret_id, "terraform-creds")
-  replication {
-    automatic = true
-  }
-}
-
-# Stash the Terraform JSON credentials in Secret Manager
-resource "google_secret_manager_secret_version" "tf_creds" {
-  secret      = google_secret_manager_secret.tf_creds.id
-  secret_data = base64decode(google_service_account_key.tf_creds.private_key)
-}
-
-# Allow the supplied accounts to read the Terraform JSON credentials
-# NOTE: These are additive, and will not unassign existing IAM privileges
-resource "google_secret_manager_secret_iam_member" "tf_creds" {
-  for_each  = toset(var.tf_sa_creds_secret_readers)
-  project   = var.project_id
-  secret_id = google_secret_manager_secret.tf_creds.secret_id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = each.value
-}
-
-# Create a slot for Ansible credential store in Secret Manager
-resource "google_secret_manager_secret" "ansible_creds" {
-  project   = var.project_id
-  secret_id = coalesce(var.ansible_sa_creds_secret_id, "ansible-creds")
-  replication {
-    automatic = true
-  }
-}
-
-# Stash the Ansible JSON credentials in Secret Manager
-resource "google_secret_manager_secret_version" "ansible_creds" {
-  secret      = google_secret_manager_secret.ansible_creds.id
-  secret_data = base64decode(google_service_account_key.ansible.private_key)
-}
-
-# Allow the supplied accounts to read the Ansible JSON credentials
-# NOTE: These are additive, and will not unassign existing IAM privileges
-resource "google_secret_manager_secret_iam_member" "ansible_creds" {
-  for_each  = toset(var.ansible_sa_creds_secret_readers)
-  project   = var.project_id
-  secret_id = google_secret_manager_secret.ansible_creds.secret_id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = each.value
 }
 
 data "google_compute_default_service_account" "default" {

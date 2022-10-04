@@ -20,8 +20,6 @@ these resources:
 1. A service account to use for Ansible automation
    - with an extendible set of roles at project level
    - with optional impersonation enabled for AD group(s)
-1. Initialises Secret Manager and stores the JSON credential files for Terraform
-   and Ansible service accounts
 
 ## Usage
 
@@ -59,8 +57,6 @@ If you need to bootstrap a new GCP project to support Terraform automation, you 
      project id
    - Add AD groups that will be granted the ability to impersonate Terraform
      service account
-   - Add AD groups that will be able to retrieve Ansible service account
-     credentials from Secret Manager
    - *Optional:* Add any Google Cloud APIs that need to be enabled
    - *Optional:* Add any additional roles that should be granted to the
      Terraform and/or Ansible service accounts
@@ -147,13 +143,6 @@ disable the Default Compute service account, and remove the `default` network.
    Disabled service account [nnnnnnnnnnnn-compute@developer.gserviceaccount.com].
    ```
 
-## Environments
-
-1. [F5 Sales project](env/f5-sales/)
-   Non-Shared VPC project used by multiple engineers in the Sales organization.
-1. [F5 Sales Shared VPC projects](env/f5-sales-shared-vpc/)
-   Projects setup as a Shared VPC host and service pair. Note that this environment has separate config pairs for the host and service project.
-
 <!-- markdownlint-disable no-inline-html -->
 <!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 ## Requirements
@@ -175,19 +164,11 @@ No modules.
 | [google_project_iam_member.oslogin](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_iam_member) | resource |
 | [google_project_iam_member.tf_sa_roles](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_iam_member) | resource |
 | [google_project_service.apis](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_service) | resource |
-| [google_secret_manager_secret.ansible_creds](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/secret_manager_secret) | resource |
-| [google_secret_manager_secret.tf_creds](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/secret_manager_secret) | resource |
-| [google_secret_manager_secret_iam_member.ansible_creds](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/secret_manager_secret_iam_member) | resource |
-| [google_secret_manager_secret_iam_member.tf_creds](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/secret_manager_secret_iam_member) | resource |
-| [google_secret_manager_secret_version.ansible_creds](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/secret_manager_secret_version) | resource |
-| [google_secret_manager_secret_version.tf_creds](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/secret_manager_secret_version) | resource |
 | [google_service_account.ansible](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account) | resource |
 | [google_service_account.tf](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account) | resource |
 | [google_service_account_iam_member.tf_default](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account_iam_member) | resource |
 | [google_service_account_iam_member.tf_impersonate_token](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account_iam_member) | resource |
 | [google_service_account_iam_member.tf_impersonate_user](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account_iam_member) | resource |
-| [google_service_account_key.ansible](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account_key) | resource |
-| [google_service_account_key.tf_creds](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account_key) | resource |
 | [google_storage_bucket.tf_bucket](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket) | resource |
 | [google_storage_bucket_iam_member.tf_bucket_admin](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket_iam_member) | resource |
 | [google_app_engine_default_service_account.default](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/app_engine_default_service_account) | data source |
@@ -198,29 +179,23 @@ No modules.
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_project_id"></a> [project\_id](#input\_project\_id) | The existing project id that will have a Terraform service account added. | `string` | n/a | yes |
-| <a name="input_ansible_sa_creds_secret_id"></a> [ansible\_sa\_creds\_secret\_id](#input\_ansible\_sa\_creds\_secret\_id) | The unique identifier to use for Ansible credential store in Secret Manager.<br>Default is 'ansible-creds'. | `string` | `"ansible-creds"` | no |
-| <a name="input_ansible_sa_creds_secret_readers"></a> [ansible\_sa\_creds\_secret\_readers](#input\_ansible\_sa\_creds\_secret\_readers) | A list of accounts that will be granted read-only access to the Ansible JSON<br>credentials in Secret Manager. Default is an empty list.<br><br>NOTE: this variable is less opinionated and is a raw list of accounts that will<br>be granted read-only access; each account must be prefixed with 'group:',<br>'serviceAccount:', or 'user:' as appropriate.<br><br>E.g.<br>ansible\_sa\_creds\_secret\_readers = [<br>  "group:devsecops@example.com",<br>  "serviceAccount:my-service@PROJECT\_ID.iam.gserviceaccount.com",<br>  "user:jane\_doe@example.com",<br>] | `list(string)` | `[]` | no |
-| <a name="input_ansible_sa_impersonate_groups"></a> [ansible\_sa\_impersonate\_groups](#input\_ansible\_sa\_impersonate\_groups) | A list of groups that will be allowed to impersonate the Ansible service account.<br>If no groups are supplied, impersonation will not be setup by the script.<br><br>NOTE: Ansible does not directly support impersonation; prefer<br>`ansible_sa_creds_secret_readers` to add accounts permitted to read the Ansible<br>SA JSON credentials.<br><br>E.g.<br>ansible\_sa\_impersonate\_groups = [<br>  "devsecops@example.com",<br>  "admins@example.com",<br>] | `list(string)` | `[]` | no |
+| <a name="input_ansible_sa_impersonate_groups"></a> [ansible\_sa\_impersonate\_groups](#input\_ansible\_sa\_impersonate\_groups) | A list of groups that will be allowed to impersonate the Ansible service account.<br>If no groups are supplied, impersonation will not be setup by the script.<br>E.g.<br>ansible\_sa\_impersonate\_groups = [<br>  "devsecops@example.com",<br>  "admins@example.com",<br>] | `list(string)` | `[]` | no |
 | <a name="input_ansible_sa_name"></a> [ansible\_sa\_name](#input\_ansible\_sa\_name) | The name of the Ansible service account to add to the project. Default is<br>'ansible'. | `string` | `"ansible"` | no |
 | <a name="input_ansible_sa_roles"></a> [ansible\_sa\_roles](#input\_ansible\_sa\_roles) | A list of IAM roles to assign to the Terraform service account. Defaults to a set<br>needed to manage Compute resources, GCS buckets, and IAM assignments. | `list(string)` | <pre>[<br>  "roles/compute.viewer",<br>  "roles/compute.osLogin"<br>]</pre> | no |
 | <a name="input_apis"></a> [apis](#input\_apis) | An optional list of GCP APIs to enable in the project. | `list(string)` | <pre>[<br>  "compute.googleapis.com",<br>  "iap.googleapis.com",<br>  "oslogin.googleapis.com",<br>  "iam.googleapis.com",<br>  "iamcredentials.googleapis.com",<br>  "cloudresourcemanager.googleapis.com",<br>  "secretmanager.googleapis.com"<br>]</pre> | no |
 | <a name="input_oslogin_accounts"></a> [oslogin\_accounts](#input\_oslogin\_accounts) | A list of fully-qualified IAM accounts that will be allowed to use OS Login to<br>VMs.<br>E.g.<br>oslogin\_accounts = [<br>  "group:devsecops@example.com",<br>  "group:admins@example.com",<br>  "user:jane@example.com",<br>] | `list(string)` | `[]` | no |
 | <a name="input_tf_bucket_location"></a> [tf\_bucket\_location](#input\_tf\_bucket\_location) | The location where the bucket will be created; this could be a GCE region, or a<br>dual-region or multi-region specifier. Default is to create a multi-region bucket<br>in 'US'. | `string` | `"US"` | no |
 | <a name="input_tf_bucket_name"></a> [tf\_bucket\_name](#input\_tf\_bucket\_name) | The name of a GCS bucket to create for Terraform state storage. This name must be<br>unique in GCP. If blank, (the default), the name will be 'tf-PROJECT\_ID', where<br>PROJECT\_ID is the unique project identifier. | `string` | `""` | no |
-| <a name="input_tf_sa_creds_secret_id"></a> [tf\_sa\_creds\_secret\_id](#input\_tf\_sa\_creds\_secret\_id) | The unique identifier to use for Terraform credential store in Secret Manager.<br>Default is 'terraform-creds'. | `string` | `"terraform-creds"` | no |
-| <a name="input_tf_sa_creds_secret_readers"></a> [tf\_sa\_creds\_secret\_readers](#input\_tf\_sa\_creds\_secret\_readers) | A list of accounts that will be granted read-only access to the Terraform JSON<br>credentials in Secret Manager. Default is an empty list. Terraform fully<br>supports impersonation; prefer `tf_sa_impersonate_groups` to add groups<br>permitted to impersonate Terraform SA.<br><br>NOTE: this variable is less opinionated and is a raw list of accounts that will<br>be granted read-only access; each account must be prefixed with 'group:',<br>'serviceAccount:', or 'user:' as appropriate.<br><br>E.g.<br>tf\_sa\_creds\_secret\_readers = [<br>  "group:devsecops@example.com",<br>  "serviceAccount:my-service@PROJECT\_ID.iam.gserviceaccount.com",<br>  "user:jane\_doe@example.com",<br>] | `list(string)` | `[]` | no |
 | <a name="input_tf_sa_impersonators"></a> [tf\_sa\_impersonators](#input\_tf\_sa\_impersonators) | A list of fully-qualified IAM accounts that will be allowed to impersonate the<br>Terraform service account. If no accounts are supplied, impersonation will not<br>be setup by the script.<br>E.g.<br>tf\_sa\_impersonators = [<br>  "group:devsecops@example.com",<br>  "group:admins@example.com",<br>  "user:jane@example.com",<br>  "serviceAccount:ci-cd@project.iam.gserviceaccount.com",<br>] | `list(string)` | `[]` | no |
 | <a name="input_tf_sa_name"></a> [tf\_sa\_name](#input\_tf\_sa\_name) | The name of the Terraform service account to add to the project. Default is<br>'terraform'. | `string` | `"terraform"` | no |
-| <a name="input_tf_sa_roles"></a> [tf\_sa\_roles](#input\_tf\_sa\_roles) | A list of IAM roles to assign to the Terraform service account. Defaults to a set<br>needed to manage Compute resources, GCS buckets, IAM, and Secret Manager assignments. | `list(string)` | <pre>[<br>  "roles/compute.admin",<br>  "roles/iam.serviceAccountAdmin",<br>  "roles/iam.serviceAccountKeyAdmin",<br>  "roles/iam.serviceAccountTokenCreator",<br>  "roles/storage.admin",<br>  "roles/resourcemanager.projectIamAdmin",<br>  "roles/iam.serviceAccountUser",<br>  "roles/secretmanager.admin",<br>  "roles/iam.roleAdmin"<br>]</pre> | no |
+| <a name="input_tf_sa_roles"></a> [tf\_sa\_roles](#input\_tf\_sa\_roles) | A list of IAM roles to assign to the Terraform service account. Defaults to a set<br>needed to manage Compute resources, GCS buckets, IAM, and Secret Manager assignments. | `list(string)` | <pre>[<br>  "roles/compute.admin",<br>  "roles/iam.serviceAccountAdmin",<br>  "roles/iam.serviceAccountKeyAdmin",<br>  "roles/storage.admin",<br>  "roles/resourcemanager.projectIamAdmin",<br>  "roles/secretmanager.admin",<br>  "roles/iam.roleAdmin"<br>]</pre> | no |
 
 ## Outputs
 
 | Name | Description |
 |------|-------------|
 | <a name="output_ansible_sa"></a> [ansible\_sa](#output\_ansible\_sa) | The fully-qualified Ansible service account identifier. |
-| <a name="output_ansible_sa_secret_id"></a> [ansible\_sa\_secret\_id](#output\_ansible\_sa\_secret\_id) | The unique secret ID to access Ansible JSON credentials. |
 | <a name="output_tf_sa"></a> [tf\_sa](#output\_tf\_sa) | The fully-qualified Terraform service account identifier. |
-| <a name="output_tf_sa_secret_id"></a> [tf\_sa\_secret\_id](#output\_tf\_sa\_secret\_id) | The unique secret ID to access Terraform JSON credentials. |
 | <a name="output_tf_state_bucket"></a> [tf\_state\_bucket](#output\_tf\_state\_bucket) | The GCS bucket that will hold Terraform state. |
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 <!-- markdownlint-enable no-inline-html -->
