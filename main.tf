@@ -10,7 +10,7 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = ">= 4.5"
+      version = ">= 4.49"
     }
   }
 
@@ -19,30 +19,44 @@ terraform {
   backend "gcs" {}
 }
 
+locals {
+  labels = merge({
+    module = "bootstrap-gcp-sales-project"
+    owner  = "m_dot_emes_at_f5_dot_com"
+  }, var.labels)
+  zones = toset([for z in var.domains : lower(trimsuffix(z, "."))])
+}
+
 # Create the Terraform service account
 resource "google_service_account" "tf" {
   project      = var.project_id
   account_id   = coalesce(var.tf_sa_name, "terraform")
-  display_name = "Terraform automation service account"
+  display_name = "Emes Terraform automation service account"
+  description  = "Service account for Terraform automation. Contact m.emes@f5.com for details."
 }
 
 locals {
-  # The email address for TF service account is predictable so we can use it
-  # where needed without introducing a cyclic dependency.
-  tf_sa_iam_email = format("serviceAccount:%s@%s.iam.gserviceaccount.com", coalesce(var.tf_sa_name, "terraform"), var.project_id)
+  # The email address for TF and Ansible service account is predictable so we
+  # can use it where needed without introducing a cyclic dependency.
+  tf_sa_email          = format("%s@%s.iam.gserviceaccount.com", coalesce(var.tf_sa_name, "terraform"), var.project_id)
+  tf_sa_id             = format("projects/%s/serviceAccounts/%s", var.project_id, local.tf_sa_email)
+  tf_sa_iam_email      = format("serviceAccount:%s", local.tf_sa_email)
+  ansible_sa_email     = format("%s@%s.iam.gserviceaccount.com", coalesce(var.ansible_sa_name, "ansible"), var.project_id)
+  ansible_sa_id        = format("projects/%s/serviceAccounts/%s", var.project_id, local.ansible_sa_email)
+  ansible_sa_iam_email = format("serviceAccount:%s", local.ansible_sa_email)
 }
 
 # Bind the impersonation privileges to the Terraform service account if group
 # list is not empty.
 resource "google_service_account_iam_member" "tf_impersonate_user" {
   for_each           = toset(var.tf_sa_impersonators)
-  service_account_id = google_service_account.tf.name
+  service_account_id = local.tf_sa_id
   role               = "roles/iam.serviceAccountUser"
   member             = each.value
 }
 resource "google_service_account_iam_member" "tf_impersonate_token" {
   for_each           = toset(var.tf_sa_impersonators)
-  service_account_id = google_service_account.tf.name
+  service_account_id = local.tf_sa_id
   role               = "roles/iam.serviceAccountTokenCreator"
   member             = each.value
 }
@@ -55,6 +69,7 @@ resource "google_storage_bucket" "tf_bucket" {
   versioning {
     enabled = false
   }
+  labels = local.labels
 }
 
 # Allow the Terraform service account and impersonators to be a storage admin on
@@ -104,7 +119,8 @@ resource "google_project_iam_member" "oslogin" {
 resource "google_service_account" "ansible" {
   project      = var.project_id
   account_id   = coalesce(var.ansible_sa_name, "ansible")
-  display_name = "Ansible automation service account"
+  display_name = "Emes Ansible automation service account"
+  description  = "Service account for Ansible automation. Contact m.emes@f5.com for details."
 }
 
 # Assign IAM roles to Ansible service account
@@ -114,7 +130,7 @@ resource "google_project_iam_member" "ansible_sa_roles" {
   for_each = toset(var.ansible_sa_roles)
   project  = var.project_id
   role     = each.value
-  member   = format("serviceAccount:%s", google_service_account.ansible.email)
+  member   = local.ansible_sa_iam_email
 
   depends_on = [google_project_service.apis]
 }
@@ -142,4 +158,69 @@ resource "google_service_account_iam_member" "tf_default" {
     google_service_account.tf,
     google_project_service.apis,
   ]
+}
+
+# OIDC federation for GitHub actions: this bootstrap repo will setup an identity
+# pool with a valid
+# Add an identity pool for federation if GitHu
+resource "google_iam_workload_identity_pool" "automation" {
+  count                     = try(var.enable_github_oidc, false) ? 1 : 0
+  project                   = var.project_id
+  workload_identity_pool_id = "emes-automation-pool"
+  display_name              = "Emes Automation Pool"
+  description               = "Defines a pool of third-party providers that can exchange tokens for automation purposes. Contact m.emes@f5.com for details."
+  disabled                  = false
+}
+
+# Add an OIDC provider for GitHub
+resource "google_iam_workload_identity_pool_provider" "github_oidc" {
+  for_each                           = toset([for pool in google_iam_workload_identity_pool.automation : pool.workload_identity_pool_id])
+  project                            = var.project_id
+  workload_identity_pool_id          = each.value
+  workload_identity_pool_provider_id = "emes-github-provider"
+  display_name                       = "Emes GitHub OIDC"
+  description                        = "Provider for GitHub automation through OIDC token exchange. Contact m.emes@f5.com for details."
+  attribute_mapping = {
+    "attribute.actor"      = "assertion.actor"
+    "attribute.aud"        = "assertion.aud"
+    "attribute.repository" = "assertion.repository"
+    "attribute.owner"      = "assertion.repository_owner"
+    "google.subject"       = "assertion.sub"
+  }
+  attribute_condition = "attribute.owner in ['memes', 'f5devcentral']"
+  oidc {
+    # TODO @memes - the effect of an empty list is to impose a match against the
+    # fully-qualified workload identity pool name. This should be sufficient but
+    # review.
+    allowed_audiences = []
+    issuer_uri        = "https://token.actions.githubusercontent.com"
+  }
+}
+
+# Add Public Cloud DNS zone for each unique domain
+resource "google_dns_managed_zone" "zone" {
+  for_each    = local.zones
+  project     = var.project_id
+  name        = format("public-%s", replace(each.value, "/[^a-z0-9-]/", "-"))
+  dns_name    = format("%s.", each.value)
+  description = "Bootstrapped DNS zone with DNSSEC"
+  dnssec_config {
+    kind          = "dns#managedZoneDnsSecConfig"
+    state         = "on"
+    non_existence = "nsec3"
+    default_key_specs {
+      kind       = "dns#dnsKeySpec"
+      algorithm  = "rsasha256"
+      key_length = 2048
+      key_type   = "keySigning"
+    }
+    default_key_specs {
+      kind       = "dns#dnsKeySpec"
+      algorithm  = "rsasha256"
+      key_length = 1024
+      key_type   = "zoneSigning"
+    }
+  }
+  visibility = "public"
+  labels     = local.labels
 }

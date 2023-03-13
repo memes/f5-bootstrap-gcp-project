@@ -133,3 +133,36 @@ A list of IAM roles to assign to the Terraform service account. Defaults to a se
 needed to manage Compute resources, GCS buckets, and IAM assignments.
 EOD
 }
+
+variable "enable_github_oidc" {
+  type        = bool
+  default     = false
+  description = <<EOD
+If true, enable a workload identity pool and OIDC provider for GitHub actions.
+Default is false.
+EOD
+}
+
+variable "labels" {
+  type = map(string)
+  validation {
+    condition     = length(compact([for k, v in var.labels : can(regex("^[a-z][a-z0-9_-]{0,62}$", k)) && can(regex("^[a-z0-9_-]{0,63}$", v)) ? "x" : ""])) == length(keys(var.labels))
+    error_message = "Each label key:value pair must match expectations."
+  }
+  default     = {}
+  description = <<EOD
+An optional set of key:value string pairs that will be added to resources.
+EOD
+}
+
+variable "domains" {
+  type = list(string)
+  validation {
+    condition     = var.domains == null ? true : length(join("", [for domain in var.domains : can(regex("^(?:(?:[a-z0-9-]{1,63}\\.)[a-z0-9]+(?:-[a-z0-9]+)*\\.)+[a-z]{2,63}$", domain)) ? "x" : ""])) == length(var.domains)
+    error_message = "The domains variable must be empty or contain valid DNS domain names."
+  }
+  default     = []
+  description = <<EOD
+An optional set of DNS domains to create in the project. Default is empty list.
+EOD
+}

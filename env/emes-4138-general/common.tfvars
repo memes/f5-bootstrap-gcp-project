@@ -33,6 +33,8 @@ apis = [
   "networkconnectivity.googleapis.com",
   # Artifact registry
   "artifactregistry.googleapis.com",
+  # Security Token Service
+  "sts.googleapis.com",
 ]
 tf_sa_roles = [
   # Defaults
@@ -62,4 +64,10 @@ tf_sa_roles = [
   "roles/networkconnectivity.hubAdmin",
   # Allow repo management
   "roles/artifactregistry.admin",
+  # STS administration
+  "roles/iam.workloadIdentityPoolAdmin",
+]
+enable_github_oidc = true
+domains = [
+  "ephemeral.strangelambda.app",
 ]

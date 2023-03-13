@@ -2,6 +2,10 @@
 ---
 fileignoreconfig:
 - filename: README.md
-  checksum: 084c3bab1684f390099a82c595d8b5a8f99c9cb239e94563b01fa962effb9f99
+  checksum: 6f4ae39988ca9b6738b552e48508c4fac329e59fd03fcdb041777c7cd9af8438
 - filename: .terraform.lock.hcl
   checksum: 55444b56161519e3efe717e2eb6f6a3b06ef641743016dc67496d05b2206507f
+- filename: variables.tf
+  checksum: 2d5ba779dc5b0e837767d63a14926382d8c50dec08e2db87f4ba790d7e75fb36
+- filename: main.tf
+  checksum: 9154d750edb4b2259084a4dd23581c1cc4034dec0a1e963be17672dca09270fa
