@@ -136,12 +136,15 @@ needed to manage Compute resources, GCS buckets, and IAM assignments.
 EOD
 }
 
-variable "enable_github_oidc" {
-  type        = bool
-  default     = false
+variable "workload_identity" {
+  type = object({
+    github    = bool
+    terraform = bool
+  })
+  default     = null
   description = <<EOD
-If true, enable a workload identity pool and OIDC provider for GitHub actions.
-Default is false.
+If any field is true, enable a workload identity pool and establish an OIDC
+provider for each enabled provider. Default value does not enable workload identity.
 EOD
 }
 

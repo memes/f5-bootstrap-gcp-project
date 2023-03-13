@@ -157,7 +157,7 @@ resource "google_project_iam_member" "ansible_sa_roles" {
 # pool with a valid
 # Add an identity pool for federation if GitHu
 resource "google_iam_workload_identity_pool" "automation" {
-  count                     = try(var.enable_github_oidc, false) ? 1 : 0
+  count                     = try(var.workload_identity.github, false) ? 1 : 0
   project                   = var.project_id
   workload_identity_pool_id = "emes-automation-pool"
   display_name              = "Emes Automation Pool"
@@ -168,9 +168,27 @@ resource "google_iam_workload_identity_pool" "automation" {
   ]
 }
 
+# Bind the Terraform service account to the workload identity
+# principals where the custom attribute 'terraform' is set to true.
+resource "google_service_account_iam_member" "bind_tf_workload_identity" {
+  for_each           = toset([for pool in google_iam_workload_identity_pool.automation : pool.name])
+  service_account_id = google_service_account.tf.name
+  member             = format("principalSet://iam.googleapis.com/%s/attribute.terraform/true", each.value)
+  role               = "roles/iam.workloadIdentityUser"
+}
+
+# Bind the Ansible service account to the workload identity
+# principals where the custom attribute 'terraform' is set to true.
+resource "google_service_account_iam_member" "bind_ansible_workload_identity" {
+  for_each           = toset([for pool in google_iam_workload_identity_pool.automation : pool.name])
+  service_account_id = google_service_account.ansible.name
+  member             = format("principalSet://iam.googleapis.com/%s/attribute.ansible/true", each.value)
+  role               = "roles/iam.workloadIdentityUser"
+}
+
 # Add an OIDC provider for GitHub
 resource "google_iam_workload_identity_pool_provider" "github_oidc" {
-  for_each                           = toset([for pool in google_iam_workload_identity_pool.automation : pool.workload_identity_pool_id])
+  for_each                           = toset([for pool in google_iam_workload_identity_pool.automation : pool.workload_identity_pool_id if try(var.workload_identity.github, false)])
   project                            = var.project_id
   workload_identity_pool_id          = each.value
   workload_identity_pool_provider_id = "emes-github-provider"
@@ -182,6 +200,9 @@ resource "google_iam_workload_identity_pool_provider" "github_oidc" {
     "attribute.repository" = "assertion.repository"
     "attribute.owner"      = "assertion.repository_owner"
     "google.subject"       = "assertion.sub"
+    # Allow GitHub actions to use both Terraform and Ansible service accounts
+    "attribute.terraform" = "true"
+    "attribute.ansible"   = "true"
   }
   attribute_condition = "attribute.owner in ['memes', 'f5devcentral']"
   oidc {
@@ -190,6 +211,43 @@ resource "google_iam_workload_identity_pool_provider" "github_oidc" {
     # review.
     allowed_audiences = []
     issuer_uri        = "https://token.actions.githubusercontent.com"
+  }
+  depends_on = [
+    google_project_service.apis,
+  ]
+}
+
+# Add an OIDC provider for Terraform Cloud/TFE
+resource "google_iam_workload_identity_pool_provider" "terraform_oidc" {
+  for_each                           = toset([for pool in google_iam_workload_identity_pool.automation : pool.workload_identity_pool_id if try(var.workload_identity.terraform, false)])
+  project                            = var.project_id
+  workload_identity_pool_id          = each.value
+  workload_identity_pool_provider_id = "emes-terraform-provider"
+  display_name                       = "Emes Terraform Cloud/TFE OIDC"
+  description                        = "Provider for Terraform Cloud/TFE automation through OIDC token exchange. Contact m.emes@f5.com for details."
+  attribute_mapping = {
+    "attribute.aud"                         = "assertion.aud",
+    "attribute.terraform_run_phase"         = "assertion.terraform_run_phase",
+    "attribute.terraform_project_id"        = "assertion.terraform_project_id",
+    "attribute.terraform_project_name"      = "assertion.terraform_project_name",
+    "attribute.terraform_workspace_id"      = "assertion.terraform_workspace_id",
+    "attribute.terraform_workspace_name"    = "assertion.terraform_workspace_name",
+    "attribute.terraform_organization_id"   = "assertion.terraform_organization_id",
+    "attribute.terraform_organization_name" = "assertion.terraform_organization_name",
+    "attribute.terraform_run_id"            = "assertion.terraform_run_id",
+    "attribute.terraform_full_workspace"    = "assertion.terraform_full_workspace",
+    "google.subject"                        = "assertion.sub"
+    # Limit Terraform Cloud/TFE actions to Terraform service account only
+    "attribute.terraform" = "true"
+    "attribute.ansible"   = "false"
+  }
+  attribute_condition = "attribute.terraform_organization_name in ['memes', 'f5-memes', 'acceleratedgcp']"
+  oidc {
+    # TODO @memes - the effect of an empty list is to impose a match against the
+    # fully-qualified workload identity pool name. This should be sufficient but
+    # review.
+    allowed_audiences = []
+    issuer_uri        = "https://app.terraform.io"
   }
   depends_on = [
     google_project_service.apis,

@@ -171,12 +171,15 @@ No modules.
 | [google_dns_managed_zone.zone](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/dns_managed_zone) | resource |
 | [google_iam_workload_identity_pool.automation](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/iam_workload_identity_pool) | resource |
 | [google_iam_workload_identity_pool_provider.github_oidc](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/iam_workload_identity_pool_provider) | resource |
+| [google_iam_workload_identity_pool_provider.terraform_oidc](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/iam_workload_identity_pool_provider) | resource |
 | [google_project_iam_member.ansible_sa_roles](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_iam_member) | resource |
 | [google_project_iam_member.oslogin](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_iam_member) | resource |
 | [google_project_iam_member.tf_sa_roles](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_iam_member) | resource |
 | [google_project_service.apis](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_service) | resource |
 | [google_service_account.ansible](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account) | resource |
 | [google_service_account.tf](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account) | resource |
+| [google_service_account_iam_member.bind_ansible_workload_identity](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account_iam_member) | resource |
+| [google_service_account_iam_member.bind_tf_workload_identity](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account_iam_member) | resource |
 | [google_service_account_iam_member.tf_impersonate_token](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account_iam_member) | resource |
 | [google_service_account_iam_member.tf_impersonate_user](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account_iam_member) | resource |
 | [google_storage_bucket.tf_bucket](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket) | resource |
@@ -192,7 +195,6 @@ No modules.
 | <a name="input_ansible_sa_roles"></a> [ansible\_sa\_roles](#input\_ansible\_sa\_roles) | A list of IAM roles to assign to the Terraform service account. Defaults to a set<br>needed to manage Compute resources, GCS buckets, and IAM assignments. | `list(string)` | <pre>[<br>  "roles/compute.viewer",<br>  "roles/compute.osLogin"<br>]</pre> | no |
 | <a name="input_apis"></a> [apis](#input\_apis) | An optional list of GCP APIs to enable in the project. | `list(string)` | <pre>[<br>  "storage-api.googleapis.com",<br>  "storage-component.googleapis.com",<br>  "compute.googleapis.com",<br>  "iap.googleapis.com",<br>  "oslogin.googleapis.com",<br>  "iam.googleapis.com",<br>  "iamcredentials.googleapis.com",<br>  "cloudresourcemanager.googleapis.com",<br>  "secretmanager.googleapis.com"<br>]</pre> | no |
 | <a name="input_domains"></a> [domains](#input\_domains) | An optional set of DNS domains to create in the project. Default is empty list. | `list(string)` | `[]` | no |
-| <a name="input_enable_github_oidc"></a> [enable\_github\_oidc](#input\_enable\_github\_oidc) | If true, enable a workload identity pool and OIDC provider for GitHub actions.<br>Default is false. | `bool` | `false` | no |
 | <a name="input_labels"></a> [labels](#input\_labels) | An optional set of key:value string pairs that will be added to resources. | `map(string)` | `{}` | no |
 | <a name="input_oslogin_accounts"></a> [oslogin\_accounts](#input\_oslogin\_accounts) | A list of fully-qualified IAM accounts that will be allowed to use OS Login to<br>VMs.<br>E.g.<br>oslogin\_accounts = [<br>  "group:devsecops@example.com",<br>  "group:admins@example.com",<br>  "user:jane@example.com",<br>] | `list(string)` | `[]` | no |
 | <a name="input_tf_bucket_location"></a> [tf\_bucket\_location](#input\_tf\_bucket\_location) | The location where the bucket will be created; this could be a GCE region, or a<br>dual-region or multi-region specifier. Default is to create a multi-region bucket<br>in 'US'. | `string` | `"US"` | no |
@@ -200,6 +202,7 @@ No modules.
 | <a name="input_tf_sa_impersonators"></a> [tf\_sa\_impersonators](#input\_tf\_sa\_impersonators) | A list of fully-qualified IAM accounts that will be allowed to impersonate the<br>Terraform service account. If no accounts are supplied, impersonation will not<br>be setup by the script.<br>E.g.<br>tf\_sa\_impersonators = [<br>  "group:devsecops@example.com",<br>  "group:admins@example.com",<br>  "user:jane@example.com",<br>  "serviceAccount:ci-cd@project.iam.gserviceaccount.com",<br>] | `list(string)` | `[]` | no |
 | <a name="input_tf_sa_name"></a> [tf\_sa\_name](#input\_tf\_sa\_name) | The name of the Terraform service account to add to the project. Default is<br>'terraform'. | `string` | `"terraform"` | no |
 | <a name="input_tf_sa_roles"></a> [tf\_sa\_roles](#input\_tf\_sa\_roles) | A list of IAM roles to assign to the Terraform service account. Defaults to a set<br>needed to manage Compute resources, GCS buckets, IAM, and Secret Manager assignments. | `list(string)` | <pre>[<br>  "roles/compute.admin",<br>  "roles/iam.serviceAccountAdmin",<br>  "roles/iam.serviceAccountKeyAdmin",<br>  "roles/storage.admin",<br>  "roles/resourcemanager.projectIamAdmin",<br>  "roles/secretmanager.admin",<br>  "roles/iam.roleAdmin"<br>]</pre> | no |
+| <a name="input_workload_identity"></a> [workload\_identity](#input\_workload\_identity) | If any field is true, enable a workload identity pool and establish an OIDC<br>provider for each enabled provider. Default value does not enable workload identity. | <pre>object({<br>    github    = bool<br>    terraform = bool<br>  })</pre> | `null` | no |
 
 ## Outputs
 
