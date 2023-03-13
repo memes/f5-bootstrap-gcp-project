@@ -1,4 +1,4 @@
-# F5 project bootstrap
+# F5 bootstrap project
 
 > NOTE: this repo is a poor substitute for a true GCP Project Factory and
 > Organization policy. I recommend Google's published
@@ -25,7 +25,7 @@ these resources:
 
 This repo uses file based environment configurations in preference to Terraform
 workspaces. Per-environment configurations are stored in
-`env/ENV/common.{config,tfvars}`, where ENV and name represents the GCP project
+`env/ENV/main.tf`, where ENV and name represents the GCP project
 environment to manage.
 
 ### To make a change to an **existing** project
@@ -34,40 +34,42 @@ To make changes to an existing project to add additional impersonation groups,
 or to enable other GCP APIs
 
 1. Fork the repo
-1. Edit the relevant environment `tfvars` file
+1. Edit the relevant environment `main.tf` file
 1. Execute standard Terraform process
 
    ```shell
-   terraform init -backend-config env/ENV/common.config
-   terraform plan -var-file env/ENV/common.tfvars
-   terraform apply -var-file env/ENV/common.tfvars
+   terraform init
+   terraform plan
+   terraform apply
    ```
 
 1. Push the changes to GitHub and open a PR to merge to `main`
 
 ### To bootstrap a **new** project
 
-If you need to bootstrap a new GCP project to support Terraform automation, you must apply the Terraform twice.
+If you need to bootstrap a new GCP project to support Terraform automation, you
+must apply the Terraform twice.
 
 #### A. Bootstrap project
 
 1. Fork the repo
-1. Create a new `env` folder for the project, with a `config` and `tfvar` file.
-   - Edit the new `tfvar` file and set `project_id` to match the target GCP
-     project id
+1. Create a new `env` folder for the project, using the contents of [env/new-template](env/new-template/)
+   as a starting point.
+1. Edit `main.tf` so that:
+   - GCS backend is disabled (lines 18-21); this will be reverted after the state
+     bucket is bootstrapped.
+   - Set `project_id` variable to match the target GCP project id
+1. Add other overrides as needed by setting the corresponding module variable
    - Add AD groups that will be granted the ability to impersonate Terraform
      service account
    - *Optional:* Add any Google Cloud APIs that need to be enabled
    - *Optional:* Add any additional roles that should be granted to the
      Terraform and/or Ansible service accounts
-1. Comment out line 12 [`main.tf`](main.tf#L12) to disable the GCS backend; this
-   will be reverted after the state bucket is bootstrapped.
 1. Execute Terraform to create the new resources
 
    ```shell
-   rm -rf .terraform
-   terraform init -backend-config env/ENV/common.config
-   terraform apply -var-file env/ENV/common.tfvars
+   terraform init
+   terraform apply
    ```
 
    ```shell
@@ -81,20 +83,26 @@ At this point a the service accounts are created and a new GCS bucket is ready t
 
 #### B. Transfer state to new GCS bucket
 
-1. Uncomment line 12 [`main.tf`](main.tf#L12) to enable GCS backend
-1. Edit the new `config` environment file and add the Terraform state bucket that was an ouput from step A.4
+1. Uncomment lines 18-21 of [main.tf](env/new-template/main.tf#L18) to (re-)enable GCS backend
+1. Set the `bucket` parameter to match the Terraform state bucket that was an
+   output from step A.4
 1. Add a unique prefix for the bootstrap state.
+
    E.g.
 
    ```hcl
-   bucket = "TF_BUCKET_NAME"
-   prefix = "foundations/terraform-bootstrap"
+   ...
+     backend "gcs" {
+       bucket = "TF_BUCKET_NAME"
+       prefix = "foundations/terraform-bootstrap"
+     }
+   }
    ```
 
 1. Reinitialise Terraform to migrate the state to GCS bucket
 
    ```shell
-   terraform init -backend-config env/ENV/name.config -migrate-state
+   terraform init -migrate-state
    ```
 
    ```shell
@@ -111,7 +119,7 @@ At this point a the service accounts are created and a new GCS bucket is ready t
 
    The Terraform state is now stored in GCS bucket and can be shared by others that are managing the project.
 
-1. Commit and push the changes to GitHub, and open a PR to merge to `master`
+1. Commit and push the changes to GitHub, and open a PR to merge to `main`
 
 ## Optional next-steps (not automated)
 
@@ -149,8 +157,8 @@ disable the Default Compute service account, and remove the `default` network.
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.0 |
-| <a name="requirement_google"></a> [google](#requirement\_google) | >= 4.49 |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.3 |
+| <a name="requirement_google"></a> [google](#requirement\_google) | >= 4.56 |
 
 ## Modules
 
@@ -169,13 +177,10 @@ No modules.
 | [google_project_service.apis](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_service) | resource |
 | [google_service_account.ansible](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account) | resource |
 | [google_service_account.tf](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account) | resource |
-| [google_service_account_iam_member.tf_default](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account_iam_member) | resource |
 | [google_service_account_iam_member.tf_impersonate_token](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account_iam_member) | resource |
 | [google_service_account_iam_member.tf_impersonate_user](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account_iam_member) | resource |
 | [google_storage_bucket.tf_bucket](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket) | resource |
 | [google_storage_bucket_iam_member.tf_bucket_admin](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket_iam_member) | resource |
-| [google_app_engine_default_service_account.default](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/app_engine_default_service_account) | data source |
-| [google_compute_default_service_account.default](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/compute_default_service_account) | data source |
 
 ## Inputs
 
@@ -185,7 +190,7 @@ No modules.
 | <a name="input_ansible_sa_impersonate_groups"></a> [ansible\_sa\_impersonate\_groups](#input\_ansible\_sa\_impersonate\_groups) | A list of groups that will be allowed to impersonate the Ansible service account.<br>If no groups are supplied, impersonation will not be setup by the script.<br>E.g.<br>ansible\_sa\_impersonate\_groups = [<br>  "devsecops@example.com",<br>  "admins@example.com",<br>] | `list(string)` | `[]` | no |
 | <a name="input_ansible_sa_name"></a> [ansible\_sa\_name](#input\_ansible\_sa\_name) | The name of the Ansible service account to add to the project. Default is<br>'ansible'. | `string` | `"ansible"` | no |
 | <a name="input_ansible_sa_roles"></a> [ansible\_sa\_roles](#input\_ansible\_sa\_roles) | A list of IAM roles to assign to the Terraform service account. Defaults to a set<br>needed to manage Compute resources, GCS buckets, and IAM assignments. | `list(string)` | <pre>[<br>  "roles/compute.viewer",<br>  "roles/compute.osLogin"<br>]</pre> | no |
-| <a name="input_apis"></a> [apis](#input\_apis) | An optional list of GCP APIs to enable in the project. | `list(string)` | <pre>[<br>  "compute.googleapis.com",<br>  "iap.googleapis.com",<br>  "oslogin.googleapis.com",<br>  "iam.googleapis.com",<br>  "iamcredentials.googleapis.com",<br>  "cloudresourcemanager.googleapis.com",<br>  "secretmanager.googleapis.com"<br>]</pre> | no |
+| <a name="input_apis"></a> [apis](#input\_apis) | An optional list of GCP APIs to enable in the project. | `list(string)` | <pre>[<br>  "storage-api.googleapis.com",<br>  "storage-component.googleapis.com",<br>  "compute.googleapis.com",<br>  "iap.googleapis.com",<br>  "oslogin.googleapis.com",<br>  "iam.googleapis.com",<br>  "iamcredentials.googleapis.com",<br>  "cloudresourcemanager.googleapis.com",<br>  "secretmanager.googleapis.com"<br>]</pre> | no |
 | <a name="input_domains"></a> [domains](#input\_domains) | An optional set of DNS domains to create in the project. Default is empty list. | `list(string)` | `[]` | no |
 | <a name="input_enable_github_oidc"></a> [enable\_github\_oidc](#input\_enable\_github\_oidc) | If true, enable a workload identity pool and OIDC provider for GitHub actions.<br>Default is false. | `bool` | `false` | no |
 | <a name="input_labels"></a> [labels](#input\_labels) | An optional set of key:value string pairs that will be added to resources. | `map(string)` | `{}` | no |

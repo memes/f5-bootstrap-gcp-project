@@ -1,22 +1,13 @@
 # This module adds a Terraform and an Ansible service account to the project,
 # and allows members of a group to impersonate the account.
-#
-# Note: GCS backend requires the current user to have valid application-default
-# credentials. An error like '... failed: dialing: google: could not find default
-# credenitals' indicates that the calling user must (re-)authenticate application
-# default credentials using `gcloud auth application-default login`.
 terraform {
-  required_version = ">= 1.0"
+  required_version = ">= 1.3"
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = ">= 4.49"
+      version = ">= 4.56"
     }
   }
-
-  # After bucket is created, the state can be migrated to the GCS location by
-  # setting bucket and prefix in env/[ENV]/[NAME].config
-  backend "gcs" {}
 }
 
 locals {
@@ -27,12 +18,25 @@ locals {
   zones = toset([for z in var.domains : lower(trimsuffix(z, "."))])
 }
 
+# Enable any GCP APIs needed
+resource "google_project_service" "apis" {
+  for_each = toset(var.apis)
+  project  = var.project_id
+  service  = each.value
+  # Shared project - don't disable the API on destroy in case someone else has
+  # a dependency on it
+  disable_on_destroy = false
+}
+
 # Create the Terraform service account
 resource "google_service_account" "tf" {
   project      = var.project_id
   account_id   = coalesce(var.tf_sa_name, "terraform")
   display_name = "Emes Terraform automation service account"
   description  = "Service account for Terraform automation. Contact m.emes@f5.com for details."
+  depends_on = [
+    google_project_service.apis,
+  ]
 }
 
 locals {
@@ -53,12 +57,21 @@ resource "google_service_account_iam_member" "tf_impersonate_user" {
   service_account_id = local.tf_sa_id
   role               = "roles/iam.serviceAccountUser"
   member             = each.value
+  depends_on = [
+    google_project_service.apis,
+    google_service_account.tf,
+  ]
 }
+
 resource "google_service_account_iam_member" "tf_impersonate_token" {
   for_each           = toset(var.tf_sa_impersonators)
   service_account_id = local.tf_sa_id
   role               = "roles/iam.serviceAccountTokenCreator"
   member             = each.value
+  depends_on = [
+    google_project_service.apis,
+    google_service_account.tf,
+  ]
 }
 
 # Create a bucket for Terraform state
@@ -70,6 +83,9 @@ resource "google_storage_bucket" "tf_bucket" {
     enabled = false
   }
   labels = local.labels
+  depends_on = [
+    google_project_service.apis,
+  ]
 }
 
 # Allow the Terraform service account and impersonators to be a storage admin on
@@ -81,16 +97,10 @@ resource "google_storage_bucket_iam_member" "tf_bucket_admin" {
   bucket   = google_storage_bucket.tf_bucket.name
   role     = "roles/storage.admin"
   member   = each.value
-}
-
-# Enable any GCP APIs needed
-resource "google_project_service" "apis" {
-  for_each = toset(var.apis)
-  project  = var.project_id
-  service  = each.value
-  # Shared project - don't disable the API on destroy in case someone else has
-  # a dependency on it
-  disable_on_destroy = false
+  depends_on = [
+    google_project_service.apis,
+    google_service_account.tf,
+  ]
 }
 
 # Assign IAM roles to Terraform service account
@@ -101,8 +111,10 @@ resource "google_project_iam_member" "tf_sa_roles" {
   project  = var.project_id
   role     = each.value
   member   = local.tf_sa_iam_email
-
-  depends_on = [google_project_service.apis]
+  depends_on = [
+    google_project_service.apis,
+    google_service_account.tf,
+  ]
 }
 
 # Allow these accounts to use OS Login
@@ -111,8 +123,9 @@ resource "google_project_iam_member" "oslogin" {
   project  = var.project_id
   role     = "roles/compute.osLogin"
   member   = each.value
-
-  depends_on = [google_project_service.apis]
+  depends_on = [
+    google_project_service.apis,
+  ]
 }
 
 # Create a service account for Ansible
@@ -121,6 +134,9 @@ resource "google_service_account" "ansible" {
   account_id   = coalesce(var.ansible_sa_name, "ansible")
   display_name = "Emes Ansible automation service account"
   description  = "Service account for Ansible automation. Contact m.emes@f5.com for details."
+  depends_on = [
+    google_project_service.apis,
+  ]
 }
 
 # Assign IAM roles to Ansible service account
@@ -131,32 +147,9 @@ resource "google_project_iam_member" "ansible_sa_roles" {
   project  = var.project_id
   role     = each.value
   member   = local.ansible_sa_iam_email
-
-  depends_on = [google_project_service.apis]
-}
-
-data "google_compute_default_service_account" "default" {
-  project = var.project_id
-
-  depends_on = [google_project_service.apis]
-}
-data "google_app_engine_default_service_account" "default" {
-  project = var.project_id
-
-  depends_on = [google_project_service.apis]
-}
-
-# Bind service account user role to default compute service account (if present)
-# for Terraform service account
-resource "google_service_account_iam_member" "tf_default" {
-  for_each           = toset(compact([for sa in [data.google_compute_default_service_account.default, data.google_app_engine_default_service_account.default] : sa.name if sa != null]))
-  service_account_id = each.value
-  role               = "roles/iam.serviceAccountUser"
-  member             = local.tf_sa_iam_email
-
   depends_on = [
-    google_service_account.tf,
     google_project_service.apis,
+    google_service_account.ansible,
   ]
 }
 
@@ -170,6 +163,9 @@ resource "google_iam_workload_identity_pool" "automation" {
   display_name              = "Emes Automation Pool"
   description               = "Defines a pool of third-party providers that can exchange tokens for automation purposes. Contact m.emes@f5.com for details."
   disabled                  = false
+  depends_on = [
+    google_project_service.apis,
+  ]
 }
 
 # Add an OIDC provider for GitHub
@@ -195,6 +191,9 @@ resource "google_iam_workload_identity_pool_provider" "github_oidc" {
     allowed_audiences = []
     issuer_uri        = "https://token.actions.githubusercontent.com"
   }
+  depends_on = [
+    google_project_service.apis,
+  ]
 }
 
 # Add Public Cloud DNS zone for each unique domain
@@ -223,4 +222,7 @@ resource "google_dns_managed_zone" "zone" {
   }
   visibility = "public"
   labels     = local.labels
+  depends_on = [
+    google_project_service.apis,
+  ]
 }

@@ -54,6 +54,8 @@ EOD
 variable "apis" {
   type = list(string)
   default = [
+    "storage-api.googleapis.com",
+    "storage-component.googleapis.com",
     "compute.googleapis.com",
     "iap.googleapis.com",
     "oslogin.googleapis.com",
