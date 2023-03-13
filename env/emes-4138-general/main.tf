@@ -62,6 +62,8 @@ module "bootstrap" {
     "artifactregistry.googleapis.com",
     # Security Token Service
     "sts.googleapis.com",
+    # Certificate Manager
+    "certificatemanager.googleapis.com",
   ]
   tf_sa_roles = [
     # Defaults
@@ -93,6 +95,8 @@ module "bootstrap" {
     "roles/artifactregistry.admin",
     # STS administration
     "roles/iam.workloadIdentityPoolAdmin",
+    # Manage Certifacates
+    "roles/certificatemanager.editor",
   ]
   enable_github_oidc = true
   domains = [
