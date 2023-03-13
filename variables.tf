@@ -160,7 +160,7 @@ EOD
 variable "domains" {
   type = list(string)
   validation {
-    condition     = var.domains == null ? true : length(join("", [for domain in var.domains : can(regex("^(?:(?:[a-z0-9-]{1,63}\\.)[a-z0-9]+(?:-[a-z0-9]+)*\\.)+[a-z]{2,63}$", domain)) ? "x" : ""])) == length(var.domains)
+    condition     = var.domains == null ? true : length(join("", [for domain in var.domains : can(regex("^(?:[a-z0-9][a-z0-9-]{0,61}[a-z0-9]\\.)+[a-z]{2,63}$", domain)) ? "x" : ""])) == length(var.domains)
     error_message = "The domains variable must be empty or contain valid DNS domain names."
   }
   default     = []
