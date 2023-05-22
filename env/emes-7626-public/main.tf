@@ -15,10 +15,10 @@ terraform {
 
   # After bucket is created, the state can be migrated to the GCS location by
   # setting bucket and prefix below.
-  backend "gcs" {
-    bucket = "tf-f5-7626-networks-public"
-    prefix = "foundations/terraform-bootstrap"
-  }
+  # backend "gcs" {
+  #   bucket = "tf-f5-7626-networks-public"
+  #   prefix = "foundations/terraform-bootstrap"
+  # }
 }
 
 module "bootstrap" {
