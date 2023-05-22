@@ -25,7 +25,8 @@ resource "google_project_service" "apis" {
   service  = each.value
   # Shared project - don't disable the API on destroy in case someone else has
   # a dependency on it
-  disable_on_destroy = false
+  disable_on_destroy         = false
+  disable_dependent_services = false
 }
 
 # Create the Terraform service account
