@@ -1,5 +1,8 @@
 # F5 bootstrap project
 
+**OBSOLETE: This repo creates resources that follow best practices but are against
+F5 CISO rulesets.**
+
 > NOTE: this repo is a poor substitute for a true GCP Project Factory and
 > Organization policy. I recommend Google's published
 > [Terraform modules](https://registry.terraform.io/modules/terraform-google-modules)
